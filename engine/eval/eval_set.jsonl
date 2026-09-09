@@ -1,0 +1,5 @@
+{"question": "What do you do at Amadeus?", "expects": ["LCP", "chatbot", "OctoMind"]}
+{"question": "Show me a standout project", "expects": ["anime", "MediaPipe"]}
+{"question": "What's your stack?", "expects": ["LangGraph", "Langfuse", "RAG"]}
+{"question": "Are you available to hire?", "expects": ["September 2026", "AI Engineer"]}
+{"question": "Where did you study?", "expects": ["ENSIMAG", "Polytech"]}
