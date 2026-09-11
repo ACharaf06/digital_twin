@@ -19,12 +19,9 @@ import re
 import unicodedata
 from collections import Counter, OrderedDict
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Literal, Optional, Sequence
+from typing import Awaitable, Callable, Literal, Optional, Sequence
 
 import numpy as np
-from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
-from pydantic import ConfigDict
 
 K1 = 1.2
 B = 0.75
@@ -379,31 +376,3 @@ class KnowledgeIndex:
             for p in (position - 1, position + 1)
             if 0 <= p < len(self.chunks) and self.chunks[p]["source"] == source
         ]
-
-
-def to_document(passage: dict) -> Document:
-    keys = ("id", "source", "label", "title", "lang", "page", "pageEnd", "position", "similarity")
-    return Document(
-        page_content=passage["text"],
-        metadata={key: passage[key] for key in keys if key in passage},
-    )
-
-
-class HybridRetriever(BaseRetriever):
-    """LangChain face of the index: one question in, grounded passages out."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    index: Any  # KnowledgeIndex
-    k: int = 4
-    max_chars: int = CHAR_BUDGET
-    mode: Mode = "hybrid"
-
-    async def _aget_relevant_documents(self, query: str, *, run_manager: Any) -> list[Document]:
-        passages = await self.index.retrieve(
-            query, k=self.k, max_chars=self.max_chars, mode=self.mode
-        )
-        return [to_document(passage) for passage in passages]
-
-    def _get_relevant_documents(self, query: str, *, run_manager: Any) -> list[Document]:
-        raise NotImplementedError("the index embeds questions asynchronously: use ainvoke")

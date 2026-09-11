@@ -1,165 +1,163 @@
 # Charaf's Digital Twin
 
-A personal AI-engineering portfolio built as an interactive 3D studio: a cartoon
-mascot of Charaf that reacts to the pointer and to a streaming conversation. The
-chat is a digital twin that answers from Charaf's own documents (his thesis,
-internship and apprenticeship reports, project notes) through an agentic RAG
-engine written in Python with FastAPI and LangGraph on OpenAI `gpt-4o-mini`.
+An AI-engineering portfolio presented as an interactive Three.js studio. A
+rigged mascot reacts to visitors and to a streaming conversation grounded in
+Charaf Achir's public profile, thesis, reports, and project documents.
 
-## What works today
+## Product behavior
 
-- **The studio:** a close-up entrance that pulls back into an unframed 3D
-  studio, with a Tripo character on a 41-bone skeleton and locally authored
-  performances: idle, wave, presentation gestures, dance, jump and turn.
-  Five-finger hands, head tracking, orbit controls, head/hand/body picking, a
-  geometry view, confetti, and a usable WebGL fallback.
-- **Live chat:** grounded answers streamed from the engine, with a line naming
-  the documents used ("Grounded in my thesis"). Answers come in the visitor's
-  language even though most of the sources are French. Listening, thinking and
-  speaking drive the character; browser voice is optional.
-- **Offline chat:** without the engine the chat is labelled **Profile preview**
-  and answers from written profile text, so the site never depends on the API.
-- **Portfolio views:** project details and the real email, LinkedIn and GitHub
-  contacts. Desktop and mobile layouts, and reduced-motion behaviour.
+- The authored 3D mascot supports idle, wave, presentation, dance, jump, spin,
+  gaze, orbit controls, picking, and reduced motion.
+- The React chat streams grounded replies from a FastAPI/LangGraph engine and
+  shows the source document labels used for an answer.
+- If the engine is unavailable, the UI clearly switches to **Profile preview**
+  and answers from the same structured public profile used by the engine.
+- If hand or motion setup fails, the authored GLB stays visible in its neutral
+  pose. If the GLB or WebGL cannot render, the stage stays empty while the
+  portfolio and chat remain usable. There is no image fallback.
 
 ## Repository layout
 
 ```text
 .
-├── web/        Vite, React, TypeScript and Three.js studio
-├── engine/     FastAPI + LangGraph chat engine (Python 3.11+)
-├── tools/      knowledge index builder and probe; mascot asset pipeline
-├── assets/     source media: 3D models, portrait, knowledge documents
-├── docs/       motion, asset pipeline, portrait and mobile notes
-└── README.md
+├── content/profile.json        public facts shared by browser and engine
+├── web/                        React, TypeScript, Vite and Three.js
+│   └── src/
+│       ├── app/                application shell and studio state
+│       ├── chat/               chat rendering and conversation lifecycle
+│       ├── portfolio/          work and about views
+│       ├── studio/             stage, authored rig, hands and motion
+│       ├── assets/mascot/      the two browser GLBs
+│       └── styles/             global and studio styles
+├── engine/                     FastAPI and LangGraph service
+│   ├── agent/                  route, grade, evidence and answer graph
+│   ├── rag/                    lexical and dense retrieval
+│   ├── eval/                   probe cases
+│   └── knowledge/              committed retrieval index
+├── assets-source/              rebuild inputs, never browser imports
+│   ├── knowledge/              reports, thesis and project documents
+│   └── mascot/                 original animated body
+├── tools/                      index and mascot maintenance commands
+└── docs/                       architecture and compatibility notes
 ```
 
-## Run the website
+The tree contains one frontend, one Python engine, one authored mascot path,
+and one public profile source. Previous video, procedural mascot, Node/Ollama
+engine, rejected models, and exploratory asset scripts remain available through
+Git history rather than appearing as production options.
 
-Use Node 22.12 or newer (tested with Node 25).
+## Run locally
 
-```sh
+Use Node 22.12+ and Python 3.11+.
+
+```bash
 cd web
 npm install
 npm run dev
 ```
 
-Vite prints the local address, normally `http://localhost:5173`. On its own the
-site runs in Profile preview.
+The site is available at the URL printed by Vite, usually
+`http://localhost:5173`. It works in Profile preview without the engine.
 
-## Run the chat engine
+To enable Live AI in another terminal:
 
-Use Python 3.11 or newer.
-
-```sh
+```bash
 cd engine
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env            # then set OPENAI_API_KEY
-.venv/bin/python -m app.main    # http://127.0.0.1:8000
+cp .env.example .env
+# add OPENAI_API_KEY to .env
+.venv/bin/python -m app.main
 ```
 
-The Vite development server proxies `/api/*` to port 8000 and removes the
-`/api` prefix, so the studio's `/api/chat` reaches the engine's `/chat`. When
-`/health` reports `ready`, the console switches from Profile preview to
-**Live AI**. Check it directly with `curl http://127.0.0.1:8000/health`.
+Vite proxies `/api/*` to `http://localhost:8000` and removes the `/api`
+prefix. `GET http://127.0.0.1:8000/health` reports whether the model and index
+are ready.
 
-The OpenAI key's quota limits how much the twin can answer: a grounded answer
-takes three `gpt-4o-mini` requests (route, grade, answer). On a free-tier key
-(50 requests a day) that is about 15 answers a day; past it the studio falls
-back to Profile preview.
-
-## How the chat works
+## Architecture
 
 ```text
-Browser · TwinConsole.tsx
-  └─ POST /api/chat ──> Vite proxy ──> FastAPI engine (:8000)
-                                         └─ LangGraph: route → retrieve → grade → evidence → generate
-                                              ├─ OpenAI gpt-4o-mini: route, grade, answer
-                                              ├─ OpenAI embeddings: the question only
-                                              └─ committed index: 793 passages from assets/knowledge
-  <── SSE frames: {"sources":[…]} → {"delta":"…"} … → {"done":true}
+React studio
+  ├─ authored Three.js mascot
+  ├─ content/profile.json ───────────────┐
+  └─ POST /api/chat                     │
+       │                                │
+       ▼                                ▼
+FastAPI ── LangGraph route → retrieve → grade → evidence → generate
+                       │
+                       └─ committed hybrid index
+                            ▲
+                            └─ assets-source/knowledge
 ```
 
-Each turn decides whether the question needs the documents and rewrites it in
-English and French, because most of the corpus is French. It then searches the
-index by keywords and embeddings, has the model keep only the passages that
-help, and answers from those alone. When nothing relevant is found it says so.
-On the project's probe, the pipeline reaches the answer for 8 of 8 English
-questions whose answer exists only in French, against 5 of 8 for search alone.
-[engine/README.md](engine/README.md) covers the graph, retrieval, the SSE
-contract, the measurements and the design trade-offs.
-
-The twin cannot contact anyone or take actions outside the conversation, and
-never claims to be the real Charaf.
+Questions that need documents are rewritten in English and French. The engine
+fuses BM25F keyword rankings with OpenAI embeddings, grades candidate passages,
+adds useful adjacent passages, and streams the grounded response as SSE. The
+structured profile is always present in the system context, so common facts do
+not depend on a retrieval hit. See [engine/README.md](engine/README.md) for the
+protocol and retrieval design.
 
 ## Configuration
 
-`engine/.env.example` lists the engine settings; copy it to `engine/.env`.
-
 | Variable | Purpose |
 | --- | --- |
-| `OPENAI_API_KEY` | Answers, routing, grading and question embeddings. Without it the engine reports offline. |
-| `MODEL` | Chat model, `gpt-4o-mini` by default. |
-| `OPENAI_MAX_RETRIES` | Retries per model call on rate limits and server errors. |
-| `TWIN_PORT` | Engine port, `8000` by default. |
+| `OPENAI_API_KEY` | Routing, grading, answers and query embeddings. |
+| `MODEL` | Chat model; defaults to `gpt-4o-mini`. |
+| `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint. |
+| `OPENAI_MAX_RETRIES` | Retries per model call. |
+| `TWIN_PORT` | Engine port; defaults to `8000`. |
 | `ALLOWED_ORIGIN` | Comma-separated browser origins allowed by CORS. |
-| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Optional tracing: one Langfuse trace per chat turn. |
-| `TWIN_ENGINE_URL` | Points the Vite development proxy at another engine. |
-| `VITE_ENGINE_URL` | Frontend API base, set at build time. |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Optional tracing. |
+| `TWIN_ENGINE_URL` | Vite development proxy target. |
+| `VITE_ENGINE_URL` | Frontend API base compiled into the browser build. |
 
-`VITE_*` variables are compiled into the public site, so never put a key in
-one. Langfuse traces include what visitors type; mention it in the privacy
-notice if tracing is on.
+Never place a secret in a `VITE_*` variable because Vite exposes it to the
+browser.
 
 ## Verification
 
-```sh
+Install `engine/requirements-dev.txt` when setting up a development environment,
+then run:
+
+```bash
 cd web
 npm run build
-npm test                 # Playwright studio tests
-npm run test:engine      # engine tests, against a mock OpenAI API
+npm run format:check
+npm test
+npm run test:engine
 ```
 
-Browser tests use installed Chrome on macOS; otherwise run
-`npx playwright install chromium` or set `CHROME_PATH`. They cover canvas
-pixels, movement, geometry mode, orbit and picking, seven viewport sizes, chat,
-projects, contacts, reduced motion and the WebGL fallback. Motion tests also
-measure foot contact, jump clearance, interruption continuity, hand deformation
-and timing at 30/60/120 fps. Engine tests start the real engine against a local
-mock of the OpenAI API, so they never spend quota.
+The browser tests cover authored geometry and motion, orbit and picking,
+responsive layouts, chat streaming and cancellation, profile fallback, real
+contact links, reduced motion, neutral-GLB fallback, and the empty WebGL
+fallback. Engine tests run against a local mock OpenAI server and never use the
+developer's key.
 
-To measure answer quality on the real index:
+The free retrieval probe reads its cases from `engine/eval/retrieval.json`:
 
-```sh
-engine/.venv/bin/python tools/knowledge/probe.py            # search only, free
-engine/.venv/bin/python tools/knowledge/probe.py --graph    # the full pipeline, uses the model
+```bash
+TWIN_NO_DOTENV=1 OPENAI_API_KEY= engine/.venv/bin/python tools/knowledge/probe.py
 ```
 
-For a motion scrubber, open `/motion-lab.html?authored`; the original Tripo
-clips are at `/motion-lab.html`. Neither page ships in the production build.
+Use `--graph` only when intentionally evaluating the real configured model.
 
-## Main files
+## Maintenance
 
-- `web/src/components/MascotStage.tsx`: camera, lighting, interaction, animation.
-- `web/src/components/TwinConsole.tsx`: chat, sources line and portfolio views.
-- `web/src/lib/mascotMotion.ts`: performance poses, limb IK, transitions and gaze.
-- `web/src/lib/mascotHands.ts`: hand attachment, wrist skinning and finger poses.
-- `web/src/lib/portfolio.ts`: public facts, contacts and Profile preview answers.
-- `engine/app/main.py`: the HTTP contract, validation and streaming.
-- `engine/agent/graph.py`: the LangGraph pipeline.
-- `engine/rag/retriever.py`: keyword and embedding search over the index.
-- `engine/knowledge/`: the always-on profile and the committed index.
-- `tools/knowledge/build-index.py`: builds the index from `assets/knowledge/`.
+- Edit public facts once in `content/profile.json`.
+- Rebuild the committed index with `tools/knowledge/build-index.py` after
+  changing `assets-source/knowledge/`, then run the retrieval probe.
+- Open `/motion-lab.html` during development to inspect authored motion. This
+  entry is not included in the production build.
+- Read [tools/mascot/README.md](tools/mascot/README.md) before rebuilding a GLB.
+- [docs/refonte.md](docs/refonte.md) records the cleanup decisions and recovery
+  locations for removed history.
 
-Keep the frontend facts in `portfolio.ts` and the engine's `knowledge/*.md` in
-sync: they answer the same questions in the two modes.
+Offline index and mascot rebuilds use their own small environment:
 
-## Deployment
+```bash
+python3.11 -m venv tools/.venv
+tools/.venv/bin/pip install -r tools/requirements.txt
+```
 
-`npm run build` produces `web/dist`, which any static host can serve; on its
-own it runs in Profile preview. Live AI needs the engine hosted separately
-behind an HTTPS reverse proxy for `/api`, since Vite's development proxy is not
-part of the build. Before exposing it publicly, add per-visitor rate limits, a
-spend cap or a paid tier on the OpenAI key, and a privacy notice covering
-OpenAI (and Langfuse, if enabled). The engine binds to `127.0.0.1` on purpose.
+`npm run build` writes the static frontend to `web/dist`. Live AI requires the
+Python engine behind an HTTPS `/api` reverse proxy in production.

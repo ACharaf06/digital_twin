@@ -11,7 +11,3 @@ langchain~=1.4          # the Langfuse callback handler imports it
 langchain-core~=1.6
 langchain-openai~=1.6
 langfuse~=4.15
-
-# tests
-httpx~=0.28
-pytest~=9.1

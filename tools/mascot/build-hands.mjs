@@ -1,9 +1,13 @@
 // Rig the existing high-detail Tripo hand and cuff. No service calls or credits.
 import fs from "node:fs/promises";
-import * as THREE from "../../web/node_modules/three/build/three.module.js";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 
-import { GLTFExporter } from "../../web/node_modules/three/examples/jsm/exporters/GLTFExporter.js";
+const fromWeb = createRequire(new URL("../../web/package.json", import.meta.url));
+const THREE = await import(fromWeb.resolve("three"));
+const { GLTFExporter } = await import(
+  fromWeb.resolve("three/examples/jsm/exporters/GLTFExporter.js")
+);
 
 // FileReader is the only DOM API needed to export this texture-free GLB in Node.
 globalThis.FileReader = class {
@@ -119,7 +123,7 @@ const capsule = (p, f) => {
 const point = v(0, 0, 0);
 const data = JSON.parse(
   execFileSync(
-    "python3",
+    process.env.MASCOT_PYTHON || "python3",
     [new URL("./extract-source-hand.py", import.meta.url).pathname],
     { maxBuffer: 20 * 1024 * 1024 },
   ),
@@ -216,7 +220,7 @@ const glb = await new GLTFExporter().parseAsync(root, {
   binary: true,
   onlyVisible: false,
 });
-const path = new URL("../../assets/3d/studio-hand.glb", import.meta.url);
+const path = new URL("../../web/src/assets/mascot/studio-hand.glb", import.meta.url);
 await fs.writeFile(path, Buffer.from(glb));
 console.log(
   JSON.stringify({

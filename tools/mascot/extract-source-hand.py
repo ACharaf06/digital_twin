@@ -1,7 +1,7 @@
 """Extract the existing high-detail Tripo right hand and cuff; no API calls.
 
 Emit a compact, welded mesh with source skin/clothing colors to the hand rigger.
-Requires NumPy and Pillow. Source assets are never modified.
+Requires NumPy and Pillow. The source asset is restored only for a rebuild.
 """
 from io import BytesIO
 from pathlib import Path
@@ -10,7 +10,12 @@ import struct
 import numpy as np
 from PIL import Image, ImageFilter
 
-source = Path(__file__).resolve().parents[2] / 'assets/3d/draft/charaf-tripo-hd-original.glb'
+source = Path(__file__).resolve().parents[2] / 'assets-source/mascot/charaf-tripo-hd-original.glb'
+if not source.exists():
+    raise SystemExit(
+        'missing assets-source/mascot/charaf-tripo-hd-original.glb; '
+        'see tools/mascot/README.md for the recovery command'
+    )
 blob = source.read_bytes()
 size = struct.unpack_from('<I', blob, 12)[0]
 gltf = json.loads(blob[20:20 + size])

@@ -1,0 +1,81 @@
+{
+  "routing": [
+    { "question": "What is your thesis about?", "sourcePrefix": "These_VF" },
+    { "question": "Tell me about world models and ontologies", "sourcePrefix": "These_VF" },
+    { "question": "What did you do at SaaSOffice?", "sourcePrefix": "SaaSOffice_work" },
+    {
+      "question": "What did you build during your apprenticeship at Amadeus?",
+      "sourcePrefix": "Rapport_REX"
+    },
+    {
+      "question": "How does Member Insight predict why a member is calling?",
+      "sourcePrefix": "member-insight"
+    },
+    {
+      "question": "How does the configuration chatbot use function calling?",
+      "sourcePrefix": "ALMS-V2"
+    },
+    {
+      "question": "Qu'est-ce que tu as fait chez SaaSOffice ?",
+      "sourcePrefix": "SaaSOffice_work"
+    },
+    { "question": "decision intelligence", "sourcePrefix": "These_VF" }
+  ],
+  "answerRecall": [
+    {
+      "question": "How did the SaaSOffice chatbot classify the people it talked to?",
+      "answerPattern": "Fournisseur|Candidat"
+    },
+    {
+      "question": "How did the SaaSOffice chatbot work when you arrived?",
+      "answerPattern": "appel consécutifs d'agents|sous-tâches"
+    },
+    {
+      "question": "How many employees did SaaSOffice have when you joined?",
+      "answerPattern": "quatre personnes|cinquantaine de salariés"
+    },
+    {
+      "question": "Why did your first configuration chatbot give wrong answers?",
+      "answerPattern": "pages Confluence avaient été écrites|doc drift"
+    },
+    {
+      "question": "What did demoing prototypes to clients teach you?",
+      "answerPattern": "annoncer une limite"
+    },
+    {
+      "question": "What changes for a GenAI developer when a prototype becomes a product?",
+      "answerPattern": "la difficulté se déplace|faisabilité technique"
+    },
+    {
+      "question": "How do you think about technical debt?",
+      "answerPattern": "dette technique"
+    },
+    {
+      "question": "Do people have to choose between transparency and performance in AI decisions?",
+      "answerPattern": "positivement\\s+corrélées|transparence contre performance"
+    }
+  ],
+  "openQuestions": [
+    "What is your thesis about?",
+    "What did you learn during your apprenticeship?",
+    "What surprised you most while building AI at Amadeus?",
+    "How do you evaluate AI systems?",
+    "Tell me about world models",
+    "What is decision intelligence?"
+  ],
+  "offTopic": [
+    "hello",
+    "thanks!",
+    "what's the weather like today?",
+    "tell me a joke",
+    "who won the football last night?",
+    "zzzz"
+  ],
+  "starters": [
+    "Tell me about your work at Amadeus",
+    "Tell me about your most creative project",
+    "Tell me about your background and education",
+    "What surprised you most while building AI at Amadeus?"
+  ],
+  "recallFloor": 5
+}

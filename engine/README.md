@@ -13,7 +13,7 @@ Python 3.11+ (LangGraph needs 3.11's async context propagation):
 
 ```sh
 cd engine
-python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
+python3.11 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 cp .env.example .env            # then set OPENAI_API_KEY
 .venv/bin/python -m app.main    # http://127.0.0.1:8000
 ```
@@ -37,7 +37,7 @@ its scripted replies.
 
 Variables already in the environment win over `engine/.env`. Keep the key out of
 any `VITE_*` variable: Vite inlines those into the public bundle. Restart the
-engine after editing the knowledge files.
+engine after editing `content/profile.json` or the committed knowledge index.
 
 ## How a turn works
 
@@ -149,11 +149,13 @@ visitors it cannot contact anyone, and no tool would make that untrue.
 
 ## Retrieval
 
-Source documents live in `assets/knowledge/` (PDFs and Markdown). The index is
+Source documents live in `assets-source/knowledge/` (PDFs and Markdown). The index is
 built offline and **committed**:
 
 ```sh
-EMBED_MODEL=text-embedding-3-large EMBED_DIMENSIONS=1024 python3 tools/knowledge/build-index.py
+python3.11 -m venv tools/.venv
+tools/.venv/bin/pip install -r tools/requirements.txt
+EMBED_MODEL=text-embedding-3-large EMBED_DIMENSIONS=1024 tools/.venv/bin/python tools/knowledge/build-index.py
 ```
 
 That writes `engine/knowledge/index.json`: about 790 passages of roughly 900
@@ -169,9 +171,8 @@ paced by the key's tokens-per-minute budget: 429s are waited out, and
 `rag/retriever.py` scores keywords with BM25F over two fields: the passage body
 and its English descriptor. It ranks by cosine similarity to the question's
 embedding, and fuses the rankings by weighted reciprocal rank fusion, with dense
-counting double. It is a line-for-line port of the earlier Node retriever. On
-the probe's 35 questions it returns the same top four, in the same order, in all
-three modes.
+counting double. The retrieval probe measures the Python implementation directly;
+there is no second runtime or adapter layer.
 
 **Cross-lingual.** The thesis, the apprenticeship report and the SaaSOffice
 report are in French, while most visitors ask in English. The English descriptor

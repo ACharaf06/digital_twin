@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import type {} from '../src/dev/motion-lab'
 
 async function lab(page: Page) {
-  await page.goto('/motion-lab.html?authored')
+  await page.goto('/motion-lab.html')
   await page.waitForFunction(() => window.__ready === true)
 }
 
