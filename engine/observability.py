@@ -1,16 +1,34 @@
-"""Langfuse tracing hook.
+"""Langfuse tracing: each chat turn becomes one trace, with a span per graph
+node and every model call's prompt, output, tokens and latency.
 
-STUB. When you wire the real agent, wrap its run in a Langfuse trace so every
-twin answer is observable (a great thing to show recruiters). Set the
-LANGFUSE_* vars in .env first.
+Enabled only when LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY are set
+(LANGFUSE_HOST defaults to Langfuse Cloud). Traces contain what visitors type,
+so turning this on sends their messages to Langfuse.
 """
-from config import LANGFUSE_ENABLED
+from __future__ import annotations
+
+import config
+
+TRACE_NAME = "twin-chat"
+TAGS = ["digital-twin", "langgraph", "rag"]
 
 
-def get_handler():
-    # TODO: return a configured Langfuse callback handler / client.
-    #   from langfuse.callback import CallbackHandler
-    #   return CallbackHandler()
-    if not LANGFUSE_ENABLED:
-        return None
-    return None
+def run_config() -> dict:
+    """LangChain run config for one turn: callbacks plus trace attributes."""
+    run: dict = {
+        "run_name": TRACE_NAME,
+        "metadata": {"langfuse_trace_name": TRACE_NAME, "langfuse_tags": TAGS},
+    }
+    if config.LANGFUSE_ENABLED:
+        from langfuse.langchain import CallbackHandler
+
+        run["callbacks"] = [CallbackHandler()]
+    return run
+
+
+def flush() -> None:
+    """Send buffered traces before the process exits."""
+    if config.LANGFUSE_ENABLED:
+        from langfuse import get_client
+
+        get_client().flush()

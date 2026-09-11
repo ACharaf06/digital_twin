@@ -20,11 +20,6 @@ def get_availability() -> dict:
     return {"apprenticeship_until": "2026-09", "open_to": "CDI / AI Engineer from Sept 2026"}
 
 
-def notify_contact(name: str, message: str, reply_to: str) -> dict:
-    """Notify Charaf that someone reached out via the twin."""
-    # TODO: send an email / webhook / store the lead.
-    _ = (name, message, reply_to)
-    return {"status": "queued"}
-
-
-TOOLS = [get_projects, get_availability, notify_contact]
+# No contact or messaging tool: the twin tells visitors it cannot contact anyone
+# or act outside the conversation, and a tool that did would make that untrue.
+TOOLS = [get_projects, get_availability]

@@ -43,6 +43,8 @@ pnpm-debug.log*
 
 # ---- coverage ----
 coverage/
+test-results/
+playwright-report/
 
 # ---- editors / tooling ----
 .vscode/
@@ -58,3 +60,4 @@ Thumbs.db
 # ---- misc: desktop app scratch, stale git locks ----
 Claude outputs/
 .git/_stale_*
+.CLAUDE.md

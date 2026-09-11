@@ -1,77 +1,62 @@
-"""The twin's reasoning loop.
+"""One chat turn: run the twin graph and turn its stream into SSE events.
 
-STUB IMPLEMENTATION. Right now this keyword-matches over a small in-code
-knowledge base and streams the answer word by word, so the whole frontend ->
-engine pipe is testable with no API key.
-
-TODO — replace `stream_reply` with a real agent:
-    1. context = retrieve(message)            # RAG over ../knowledge
-    2. run a LangGraph agent: LLM + TOOLS + retrieved context + history
-    3. stream the model's tokens as {"delta": ...}
-    4. surface tool results (e.g. a project) as {"card": ...}
-    5. wrap the run in a Langfuse trace (see observability.get_handler)
-Keep the scripted answers below as the graceful fallback for when the LLM is
-unavailable, rate-limited, or over the spend cap.
+The graph streams two kinds of event: the answer's tokens (LangGraph's
+"messages" mode, filtered to the generate node so the router's and grader's
+structured replies never reach the visitor) and the sources announcement the
+generate node writes before its first token ("custom" mode).
 """
 from __future__ import annotations
 
-import asyncio
-from typing import AsyncGenerator
+import logging
+from typing import AsyncIterator
 
-from rag.retriever import retrieve  # noqa: F401  (used once RAG is wired)
+import config
+from agent.graph import build_graph
+from observability import run_config
+from rag.retriever import KnowledgeIndex
 
-ANIME_CARD = {
-    "title": "Live Anime Style Transfer",
-    "subtitle": "Real-time webcam anime filter, switched with Naruto hand-signs.",
-    "tags": ["AnimeGANv2", "PyTorch / MPS", "MediaPipe", "Real-time"],
-}
-CHATBOT_CARD = {
-    "title": "LCP Configuration Chatbot",
-    "subtitle": "RAG + function-calling assistant for Amadeus' loyalty platform.",
-    "tags": ["RAG", "Function calling", "LangGraph", "Azure OpenAI"],
-}
+log = logging.getLogger("twin")
 
-
-def _match(message: str) -> dict:
-    q = message.lower()
-
-    def has(*ks: str) -> bool:
-        return any(k in q for k in ks)
-
-    if has("amadeus", "work on", "do at", "current", "octomind"):
-        return {
-            "text": "At Amadeus I build GenAI for LCP, their loyalty platform. I shipped a "
-            "configuration-chatbot POC solo, then the use cases earned their own team, "
-            "OctoMind, to take them toward production.",
-            "card": CHATBOT_CARD,
-        }
-    if has("project", "standout", "best", "built", "show"):
-        return {
-            "text": "My favourite is a creative one: real-time anime style transfer over a live "
-            "webcam, with Naruto hand-signs to switch modes.",
-            "card": ANIME_CARD,
-        }
-    if has("stack", "skill", "tech", "tool"):
-        return {
-            "text": "Applied AI end to end: RAG, function calling and agents with LangChain and "
-            "LangGraph, on Azure OpenAI, LiteLLM for routing, Langfuse for observability. "
-            "Python-first."
-        }
-    if has("available", "hire", "cdi", "looking", "position"):
-        return {
-            "text": "The Amadeus apprenticeship runs to September 2026, so I'm open to a permanent "
-            "AI Engineer role from then. Happy to talk sooner."
-        }
-    return {
-        "text": "Ask me about Charaf's work at Amadeus, his stack, his projects, his studies, or "
-        "how to reach him."
-    }
+index = KnowledgeIndex(
+    config.KNOWLEDGE_DIR,
+    openai_api_key=config.OPENAI_API_KEY,
+    openai_base_url=config.OPENAI_BASE_URL,
+    max_retries=config.OPENAI_MAX_RETRIES,
+)
+_graph = None
 
 
-async def stream_reply(message: str, history: list[dict]) -> AsyncGenerator[dict, None]:
-    reply = _match(message)
-    for word in reply["text"].split(" "):
-        yield {"delta": word + " "}
-        await asyncio.sleep(0.02)
-    if reply.get("card"):
-        yield {"card": reply["card"]}
+def graph():
+    # Built on first use: without a key there is nothing to build, and /health
+    # already reports that.
+    global _graph
+    if _graph is None:
+        _graph = build_graph(
+            index,
+            model=config.MODEL,
+            api_key=config.OPENAI_API_KEY,
+            base_url=config.OPENAI_BASE_URL,
+            max_retries=config.OPENAI_MAX_RETRIES,
+        )
+    return _graph
+
+
+async def stream_reply(message: str, history: list[dict]) -> AsyncIterator[dict]:
+    """Yields {"sources": [...]} at most once, then {"delta": "..."} events."""
+    stream = graph().astream(
+        {"message": message, "history": history},
+        config=run_config(),
+        stream_mode=["messages", "custom"],
+    )
+    try:
+        async for mode, payload in stream:
+            if mode == "custom":
+                yield payload
+                continue
+            chunk, metadata = payload
+            if metadata.get("langgraph_node") == "generate" and isinstance(chunk.content, str) and chunk.content:
+                yield {"delta": chunk.content}
+    finally:
+        # Closing the graph's stream cancels its running node, and with it the
+        # model request. Without this a visitor who leaves keeps paying for tokens.
+        await stream.aclose()
