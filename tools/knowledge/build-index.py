@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build the digital twin's retrieval index from assets/knowledge/.
+"""Build the digital twin's retrieval index from assets-source/knowledge/.
 
 Offline step: extract text from the source PDFs and Markdown, split it into
-overlapping passages, and write a JSON index that engine/rag/retrieve.mjs loads
+overlapping passages, and write a JSON index that the Python engine loads
 at start-up. The index is committed, so retrieval works anywhere the site is
 served -- only answer generation needs a model behind it.
 
@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE_DIR = ROOT / "assets" / "knowledge"
+SOURCE_DIR = ROOT / "assets-source" / "knowledge"
 OUT_DIR = ROOT / "engine" / "knowledge"
 OUT_INDEX = OUT_DIR / "index.json"
 OUT_VECTORS = OUT_DIR / "index-vectors.bin"

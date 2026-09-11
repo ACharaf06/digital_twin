@@ -117,8 +117,8 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
         overflow: Array.from(document.querySelectorAll('h1,h2,p,button,input,a'))
           .filter(
             (el) =>
-            (el as HTMLElement).offsetWidth > 0 &&
-            !el.querySelector('.tool-tip') &&
+              (el as HTMLElement).offsetWidth > 0 &&
+              !el.querySelector('.tool-tip') &&
               el.scrollWidth > el.clientWidth + 2 &&
               getComputedStyle(el).display !== 'inline',
           )
@@ -130,7 +130,13 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
     expect(layout.overflow, `${width} text overflow`).toEqual([])
     const canvasPixels = PNG.sync.read(await page.locator('canvas').screenshot())
     let rendered = 0
-    for(let i=0;i<canvasPixels.data.length;i+=4)if(canvasPixels.data[i]<170&&canvasPixels.data[i+1]<170&&canvasPixels.data[i+2]<170)rendered++
+    for (let i = 0; i < canvasPixels.data.length; i += 4)
+      if (
+        canvasPixels.data[i] < 170 &&
+        canvasPixels.data[i + 1] < 170 &&
+        canvasPixels.data[i + 2] < 170
+      )
+        rendered++
     expect(rendered, `${width} character pixels`).toBeGreaterThan(1000)
     await page.screenshot({ path: info.outputPath(`studio-${width}x${height}.png`) })
   }
@@ -199,7 +205,9 @@ test('profile fallback, project navigation and genuine contacts', async ({ page 
 })
 const profileEmail = 'charaf.achir6@gmail.com'
 
-test('reduced motion is stable and WebGL fallback keeps chat usable', async ({ page }, info) => {
+test('reduced motion is stable and an empty WebGL fallback keeps chat usable', async ({
+  page,
+}, info) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await enter(page)
   await page.getByRole('button', { name: 'Reset view' }).click()
@@ -217,8 +225,20 @@ test('reduced motion is stable and WebGL fallback keeps chat usable', async ({ p
   })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.reload()
-  await expect(page.locator('.mascot-fallback img')).toBeVisible()
+  await expect(page.locator('.mascot-stage')).toHaveAttribute('data-fallback', 'empty')
+  await expect(page.locator('.mascot-stage img')).toHaveCount(0)
+  await expect(page.locator('.mascot-stage canvas')).toHaveCount(0)
   await page.getByRole('button', { name: 'Come on in' }).click()
   await expect(page.getByRole('textbox', { name: "Ask Charaf's digital twin" })).toBeVisible()
   await page.screenshot({ path: info.outputPath('webgl-fallback.png') })
+})
+
+test('a hand setup failure keeps the authored mascot in a neutral pose', async ({ page }) => {
+  await page.goto('/?mascot=neutral')
+  const stage = page.locator('.mascot-stage')
+  await expect(stage).toHaveAttribute('data-ready', 'true', { timeout: 20000 })
+  await expect(stage).toHaveAttribute('data-asset', 'neutral')
+  await expect(stage).toHaveAttribute('data-motion', 'neutral')
+  await expect(stage.locator('canvas')).toBeVisible()
+  await expect(stage.locator('img')).toHaveCount(0)
 })

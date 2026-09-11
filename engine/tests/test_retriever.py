@@ -10,7 +10,7 @@ import re
 import numpy as np
 import pytest
 
-from rag.retriever import HybridRetriever, KnowledgeIndex, searchable
+from rag.retriever import KnowledgeIndex, searchable
 from tests.mock_openai import MockOpenAI
 
 
@@ -144,15 +144,6 @@ def test_only_messages_with_something_to_search_reach_the_index():
     # Arabic and Chinese have no Latin tokens, but the embeddings can read them
     for text in ["tell me more", "What is LCP?", "Nice", "ما موضوع أطروحتك؟", "你的论文是关于什么的？"]:
         assert searchable(text) is True, text
-
-
-def test_the_langchain_interface_returns_documents_with_provenance(world):
-    retriever = HybridRetriever(index=open_index(world))
-    [first, *_] = run(world, retriever.ainvoke("Where does the cat sleep?"))
-    assert first.page_content.startswith("Le chat")
-    assert first.metadata["source"] == "a.pdf"
-    assert first.metadata["label"] == "doc a"
-    assert first.metadata["lang"] == "fr"
 
 
 def test_questions_are_embedded_once_then_remembered(world):

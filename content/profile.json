@@ -1,0 +1,141 @@
+{
+  "identity": {
+    "name": "Charaf Achir",
+    "shortName": "Charaf",
+    "role": "AI Engineer",
+    "location": "France",
+    "positioning": "Applied-AI engineer focused on taking GenAI systems from prototype to production.",
+    "story": "I turn ideas into applied AI: conversational systems, computer vision, and the occasional experiment that makes you smile."
+  },
+  "contact": {
+    "email": "charaf.achir6@gmail.com",
+    "linkedin": "https://www.linkedin.com/in/charaf-achir-19b6b21a3/",
+    "github": "https://github.com/ACharaf06"
+  },
+  "availability": {
+    "from": "September 2026",
+    "roles": ["AI Engineer", "AI Specialist"],
+    "note": "Open to conversations sooner and to a permanent role from September 2026."
+  },
+  "experience": [
+    {
+      "organization": "Amadeus",
+      "role": "GenAI Developer",
+      "period": "Apprenticeship through September 2026",
+      "location": "France",
+      "summary": "Builds GenAI for LCP, the Amadeus loyalty platform. Built the configuration-chatbot proof of concept independently, helped establish the OctoMind team, and now works on Member Insight, the chatbot, and technical documentation for the AI stack."
+    },
+    {
+      "organization": "SaaSOffice",
+      "role": "AI Engineer intern",
+      "period": "2025",
+      "location": "Sophia Antipolis, France",
+      "summary": "Built and deployed client-facing and staff-facing assistants, including incoming-user qualification and quantitative portfolio analysis."
+    },
+    {
+      "organization": "Inria",
+      "role": "NLP & ML Engineer intern",
+      "period": "2024",
+      "location": "Sophia Antipolis, France",
+      "summary": "Research-oriented natural-language-processing and machine-learning engineering."
+    }
+  ],
+  "education": [
+    {
+      "school": "Grenoble INP – Ensimag & Grenoble EM",
+      "period": "2025–2026",
+      "degree": "Mastère Spécialisé® Big Data",
+      "details": "In progress alongside the Amadeus apprenticeship. Written work includes a professional thesis on AI-native decision systems and an apprenticeship experience report."
+    },
+    {
+      "school": "Polytech Nice-Sophia",
+      "period": "2023–2025",
+      "degree": "Engineering degree, Artificial Intelligence major",
+      "details": "Master level, top 10%, with an exchange semester at KTH Royal Institute of Technology in Stockholm."
+    },
+    {
+      "school": "Université Grenoble Alpes",
+      "period": "2020–2023",
+      "degree": "BSc Applied Mathematics & Computer Science (MIASHS)",
+      "details": "Top 5%."
+    }
+  ],
+  "distinctions": [
+    "Winner, HTE GeNiUS hackathon in Italy",
+    "Winner, Les Nuits de l'Info in Sophia Antipolis"
+  ],
+  "stack": {
+    "language": ["Python"],
+    "llmSystems": ["RAG", "function calling", "agents", "LangChain", "LangGraph"],
+    "platforms": ["Azure OpenAI", "Azure AI Foundry", "LiteLLM", "Langfuse"],
+    "computerVision": ["PyTorch", "MediaPipe"]
+  },
+  "projects": [
+    {
+      "id": "agent",
+      "featured": true,
+      "name": "From question to action.",
+      "category": "AMADEUS / APPLIED AI",
+      "description": "An assistant that understands a loyalty platform, then gets things done.",
+      "tags": ["RAG", "LangGraph", "Azure OpenAI"],
+      "context": "Loyalty-platform configuration means navigating complex documentation and product rules. At Amadeus, I explored how a conversational assistant could make that knowledge actionable.",
+      "approach": "I built the configuration-chatbot proof of concept independently: retrieval over product documentation, then a hybrid approach combining code-generated documentation and function calling.",
+      "outcome": "Client and prospect demos helped build support for a dedicated team, OctoMind, to take these AI use cases toward production. My work also includes Member Insight and technical documentation for the AI stack."
+    },
+    {
+      "id": "member-insight",
+      "featured": false,
+      "name": "Member Insight",
+      "category": "AMADEUS / APPLIED AI",
+      "description": "An agent that gives call-centre staff a grounded view of a loyalty member and recommends the next action.",
+      "tags": ["A2A", "MCP", "Azure OpenAI", "Redis"],
+      "context": "Call-centre agents need a useful picture of a member as soon as they open the record.",
+      "approach": "The system produces a condensed snapshot, predicts why the member may be calling with a confidence and justification, recommends a next action, and answers questions about point history. Evidence is computed deterministically in code; models handle judgement calls.",
+      "outcome": "Deployed to test environments behind a feature flag and developed as the OctoMind team's priority use case."
+    },
+    {
+      "id": "saasoffice",
+      "featured": false,
+      "name": "SaaSOffice assistants",
+      "category": "SAASOFFICE / APPLIED AI",
+      "description": "Client-facing and internal assistants for a SaaS startup.",
+      "tags": ["LLM agents", "Chatbot", "Product integration"],
+      "context": "The company needed assistants for visitors and staff, connected to real product workflows.",
+      "approach": "I built and deployed assistants for user qualification and quantitative portfolio analysis.",
+      "outcome": "The assistants moved applied AI into customer-facing and operational workflows."
+    },
+    {
+      "id": "thesis",
+      "featured": false,
+      "name": "AI-native decision systems",
+      "category": "PROFESSIONAL THESIS",
+      "description": "From descriptive business intelligence to world models, ontologies, and decision intelligence.",
+      "tags": ["Decision intelligence", "World models", "Ontologies", "BI"],
+      "context": "A French-language professional thesis for the Big Data Mastère Spécialisé®, built on interviews with practitioners.",
+      "approach": "The work studies how decision systems can move beyond descriptive reporting through explicit knowledge and models of the world.",
+      "outcome": "A grounded view of AI-native decision systems and their relationship to business intelligence."
+    },
+    {
+      "id": "vision",
+      "featured": true,
+      "name": "Reality, remixed.",
+      "category": "PERSONAL LAB / COMPUTER VISION",
+      "description": "Live anime style transfer. Your webcam, a neural network, and a hand sign.",
+      "tags": ["PyTorch", "AnimeGANv2", "MediaPipe"],
+      "context": "A creative experiment at the intersection of computer vision, real-time inference, and anime. What if changing a visual effect felt like casting it?",
+      "approach": "AnimeGANv2 transforms live webcam frames in PyTorch on Apple Silicon. MediaPipe tracks hand landmarks so Naruto-inspired hand signs can switch visual modes.",
+      "outcome": "A live, gesture-driven style-transfer experience that connects model inference to a playful physical interaction. This is a personal experiment, not a production product."
+    },
+    {
+      "id": "twin",
+      "featured": true,
+      "name": "A little more human.",
+      "category": "YOU ARE HERE / DIGITAL TWIN",
+      "description": "A portfolio with a presence. Part personal interface, part living experiment.",
+      "tags": ["Three.js", "React", "LangGraph", "OpenAI"],
+      "context": "A personal portfolio should feel like meeting the person behind the work. This experiment turns an authored 3D character into an interactive digital presence.",
+      "approach": "A rigged Three.js mascot responds to pointer movement, gestures, and a streaming conversational interface grounded in Charaf's public profile and source documents.",
+      "outcome": "The studio you are exploring now: an animated 3D mascot and a Python/LangGraph conversation backed by OpenAI. A clearly labelled profile preview remains available when the engine is offline."
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 """Make the runtime rig from the original Tripo GLB without changing skin/geometry.
 
 Usage: python3 tools/mascot/prepare-studio-asset.py
-Requires Pillow. Original assets and animations remain available for comparison.
+Requires Pillow.
 """
 from io import BytesIO
 from pathlib import Path
@@ -10,15 +10,15 @@ import struct
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
-source = ROOT / 'assets/3d/charaf-animated.glb'
-output = ROOT / 'assets/3d/charaf-studio.glb'
+source = ROOT / 'assets-source/mascot/charaf-animated.glb'
+output = ROOT / 'web/src/assets/mascot/charaf-studio.glb'
 blob = source.read_bytes()
 assert blob[:4] == b'glTF' and struct.unpack_from('<I', blob, 4)[0] == 2
 json_size = struct.unpack_from('<I', blob, 12)[0]
 gltf = json.loads(blob[20:20 + json_size])
 binary = blob[28 + json_size:]
 assert not gltf.get('extensionsRequired'), 'Extend the packer before using a compressed source.'
-# Runtime performances live in mascotMotion.ts; imported animation tracks are unused.
+# Runtime performances live in web/src/studio/motion.ts; imported tracks are unused.
 gltf.pop('animations', None)
 used = set()
 for mesh in gltf['meshes']:

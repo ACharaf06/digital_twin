@@ -29,6 +29,7 @@ not a substitute for testing physical iOS/Android GPUs before a public launch.
 - Reduced motion disables ambient movement, confetti, and animated UI entrances.
 - Touch uses OrbitControls; command buttons provide keyboard-accessible actions.
 - Audio starts only when the visitor enables voice. Browser voices vary.
-- If WebGL or the source texture fails, the original portrait and conversation
-  remain available. It is labeled as a fallback, not presented as working 3D.
+- If hand or motion setup fails, the authored GLB remains visible in its neutral
+  pose. If WebGL or the body GLB fails, the stage is empty and the conversation
+  remains available. No image is shown as a mascot fallback.
 - No microphone or webcam is requested, and chat is not persisted in storage.

@@ -1,16 +1,16 @@
 """What the twin is told: its identity, and the instructions for each graph step."""
 from __future__ import annotations
 
-from config import KNOWLEDGE_DIR
+import json
+from pathlib import Path
 
-# The curated profile is always in the prompt: these are the facts visitors ask
-# for most ("who are you", "where did you study", "can I hire you"), and they
-# must not depend on a retrieval hit. Depth comes from the index instead.
-PROFILE_FILES = ("profile.md", "education.md", "experience.md", "projects.md", "faq.md")
+PROFILE_FILE = Path(__file__).resolve().parents[2] / "content" / "profile.json"
 
 
 def load_profile() -> str:
-    return "\n\n".join((KNOWLEDGE_DIR / name).read_text(encoding="utf8") for name in PROFILE_FILES)
+    """Load the public facts shared by the frontend and the engine."""
+    profile = json.loads(PROFILE_FILE.read_text(encoding="utf8"))
+    return json.dumps(profile, ensure_ascii=False, indent=2)
 
 
 IDENTITY = """You are Charaf Achir's digital twin: a friendly, curious AI representation of the AI engineer, not the human himself. You live in an interactive cartoon 3D studio.

@@ -14,6 +14,16 @@ export type Turn = { role: string; content: string }
 
 const ENGINE_URL = import.meta.env.VITE_ENGINE_URL ?? '/api'
 
+export async function checkEngine(signal?: AbortSignal): Promise<boolean> {
+  const timeout = AbortSignal.timeout(5000)
+  const response = await fetch(`${ENGINE_URL}/health`, {
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  })
+  if (!response.ok) return false
+  const data = (await response.json()) as { status?: string }
+  return data.status === 'ready'
+}
+
 export async function* streamChat(
   message: string,
   history: Turn[] = [],
