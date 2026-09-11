@@ -1,53 +1,266 @@
 # Digital Twin Engine
 
-FastAPI service that powers the portfolio's digital-twin chatbot. Ships as a
-runnable **stub** (keyword-matched, streamed) so the frontend pipe works with no
-API key; swap the stub for a real RAG + tools + agent setup incrementally.
+The studio's chat backend is a Python service built with FastAPI and LangGraph.
+It answers with OpenAI `gpt-4o-mini`, grounded in Charaf's own documents, and
+streams the reply to the frontend as server-sent events. Each turn runs a small
+agentic RAG graph. It decides whether the question needs the documents,
+rewrites it for a mostly French corpus, retrieves and grades passages, and
+answers only from what survives. It says so when nothing does.
 
-## Run
+## Start
 
-```bash
+Python 3.11+ (LangGraph needs 3.11's async context propagation):
+
+```sh
 cd engine
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env        # fill in when you wire the LLM
-uvicorn app.main:app --reload --port 8000
+python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env            # then set OPENAI_API_KEY
+.venv/bin/python -m app.main    # http://127.0.0.1:8000
 ```
 
-The web app proxies `/api/*` to `http://localhost:8000` (see web/vite.config.ts),
-so `POST /api/chat` from the frontend reaches this service in dev.
+`web/vite.config.ts` proxies the studio's `/api/*` to this port. Point it at
+another engine with `TWIN_ENGINE_URL`. Without a key the engine still starts:
+`/health` reports `offline`, `/chat` answers 503, and the studio falls back to
+its scripted replies.
 
-## API contract
+| Variable | Default |
+| --- | --- |
+| `OPENAI_API_KEY` | unset: answers, routing, grading, and question embeddings all need it |
+| `MODEL` | `gpt-4o-mini` |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` |
+| `OPENAI_MAX_RETRIES` | `2` (per model call, with the SDK's backoff) |
+| `TWIN_PORT` | `8000` |
+| `ALLOWED_ORIGIN` | `http://localhost:5173` (CORS; comma-separated) |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | unset: tracing off |
+| `LANGFUSE_BASE_URL` / `LANGFUSE_HOST` | Langfuse Cloud |
+| `TWIN_ENGINE_URL` (vite dev proxy) | `http://localhost:8000` |
 
-`POST /chat`  →  `text/event-stream`
+Variables already in the environment win over `engine/.env`. Keep the key out of
+any `VITE_*` variable: Vite inlines those into the public bundle. Restart the
+engine after editing the knowledge files.
 
-Request:
+## How a turn works
+
+```
+route ──┬─ small_talk / profile ─────────────────────────────► generate
+        └─ documents ─► retrieve ─► grade ─┬─ something kept ─► evidence ─► generate
+                                      ▲    └─ nothing kept ─┐
+                                      └──── next window ◄───┘   (once)
+```
+
+- **route** classifies the message as `small_talk`, `profile` (CV-level facts
+  the always-present profile answers) or `documents`, with one structured
+  `gpt-4o-mini` call. The same call rewrites the message as a standalone English
+  question, resolving follow-ups such as "tell me more" against the history, and
+  again in French. Most of the corpus is French, and the French phrasing is what
+  reaches it. A message with nothing to search and no history ("hello",
+  "thanks!") skips the call entirely.
+- **retrieve** ranks the index for both phrasings, by keywords and by
+  embeddings, and fuses the four rankings (see [Retrieval](#retrieval)).
+- **grade** shows the model the top 10 candidates and keeps the ones that help
+  answer, most useful first. That one call is both a relevance filter and a
+  reranker. When it keeps nothing, it grades ranks 11–24 once, then stops.
+- **evidence** fits the kept passages to the prompt: up to four, within 4,400
+  characters. It adds the passages on either side of the best two (up to 2,400
+  more), because an answer can straddle a chunk boundary.
+- **generate** sends the `sources` frame, then streams the answer. The system
+  prompt holds the twin's identity and grounding rules, the profile and the
+  excerpts. When the documents were searched and nothing was kept, the excerpts
+  are replaced by a note saying so, and the model must answer from the profile
+  or admit it does not know.
+
+A malformed routing or grading reply degrades instead of failing. Routing falls
+back to searching the message itself, and grading falls back to the fused
+ranking. An API failure (a rate limit after retries, an outage) propagates, and
+before the first token that still produces a clean 503.
+
+| File | Role |
+| --- | --- |
+| `app/main.py` | HTTP contract: validation, `/health`, SSE framing, disconnects |
+| `agent/graph.py` | the LangGraph state machine above |
+| `agent/prompts.py` | identity and grounding rules, router and grader instructions |
+| `agent/orchestrator.py` | runs the graph per turn; LangGraph stream to SSE events |
+| `rag/retriever.py` | the committed index: BM25F, dense similarity, fusion |
+| `observability.py` | Langfuse callback and trace attributes |
+
+## Measured
+
+`tools/knowledge/probe.py` measures the shipped index. Routing means the
+expected document comes first. Answer recall uses eight English questions whose
+answer exists only in French. English share is the share of English passages
+that open questions retrieve, against 20% of the corpus:
+
+| Pipeline | Routing | Answer recall | English share |
+| --- | --- | --- | --- |
+| Keywords only | 8/8 | 1/8 | 88% |
+| Dense only | 7/8 | 6/8 | 42% |
+| Hybrid 1:2 (top 4, no model) | 8/8 | 5/8 | 58% |
+| **Graph (shipped)** | **8/8** | **8/8** | not yet measured |
+
+The grader's own picks contain the answer for 6 of the 8 recall questions. The
+passages adjacent to the best two pick up the other two: both are SaaSOffice
+answers that sit in a passage next to one the grader kept. Every probe question
+was routed to `documents` and settled in one grading pass. The run stopped
+before the English-share, off-topic and starter sections because the key hit its
+daily request cap (see [Cost and limits](#cost-and-limits)). Those sections are
+still unmeasured.
+
+Eight questions make a small eval: one question is 12.5 points. Read these as
+direction, not precision.
+
+## Contract
+
+`GET /health` reports `ready`, `model-missing` or `offline` (503). It confirms
+the model exists at most every ten minutes, since the studio calls it on every
+page load:
+
 ```json
-{ "message": "What's your stack?", "history": [{"role": "user", "content": "hi"}] }
+{"status":"ready","provider":"openai","model":"gpt-4o-mini","engine":"langgraph",
+ "retrieval":{"ready":true,"passages":793,"embedProvider":"openai","embedModel":"text-embedding-3-large"}}
 ```
 
-Each SSE event is `data: {json}\n\n`:
-- `{"delta": "..."}`  incremental token(s)
-- `{"card": {"title","subtitle","tags"}}`  optional rich project card
-- `{"done": true}`  end of stream
+`POST /chat` accepts:
 
-`GET /health` → `{"status":"ok"}`
-
-## Layout
-
-```
-engine/
-├── app/main.py         FastAPI, CORS, /chat (SSE), /health
-├── agent/orchestrator  reasoning loop  (STUB -> LangGraph agent)
-├── rag/                ingest.py + retriever.py over knowledge/  (STUB)
-├── tools/tools.py      get_projects / get_availability / notify_contact  (STUB)
-├── knowledge/          markdown source of truth (RAG corpus)
-├── eval/               eval_set.jsonl
-├── observability.py    Langfuse hook  (STUB)
-└── config.py
+```json
+{"message":"What do you build?","history":[{"role":"user","content":"Hi"}]}
 ```
 
-## Next steps (see repo README)
-RAG over `knowledge/`, a LangGraph agent with `TOOLS`, Langfuse tracing, plus the
-production concerns: rate limit, response cache, cheap model, spend cap, and a
-fallback to the scripted answers when any of those trip.
+The response is `text/event-stream`, with frames separated by a blank line.
+When the answer draws on the documents, a `sources` frame arrives first:
+
+```text
+data: {"sources":["my thesis"]}
+
+data: {"delta":"I build applied AI systems."}
+
+data: {"done":true}
+```
+
+The `sources` frame is omitted when nothing was kept, so clients must treat it
+as optional.
+
+Requests are limited to 40 KB and messages to 2,000 characters. Only `user`
+and `assistant` history turns are kept, the last 6 at 800 characters each.
+Malformed requests return 400 or 413. The response is held until the first token
+exists, so a failure anywhere before it returns 503, not a broken stream.
+Disconnecting cancels the graph, including an in-flight model request. There is
+no contact-forwarding action, database, or saved chat history: the twin tells
+visitors it cannot contact anyone, and no tool would make that untrue.
+
+## Retrieval
+
+Source documents live in `assets/knowledge/` (PDFs and Markdown). The index is
+built offline and **committed**:
+
+```sh
+EMBED_MODEL=text-embedding-3-large EMBED_DIMENSIONS=1024 python3 tools/knowledge/build-index.py
+```
+
+That writes `engine/knowledge/index.json`: about 790 passages of roughly 900
+characters, each carrying its source, page, detected language, and an English
+title and description. It also writes one `text-embedding-3-large` vector per
+passage, truncated to 1,024 dimensions, to `index-vectors.bin` (~3 MB). **Commit
+both files.** The engine loads them at start-up, so there is no build step and
+no vector database. Truncation is the model's own (Matryoshka), not slicing, so
+1,024 dimensions keep most of the quality at a third of the size. A build is
+paced by the key's tokens-per-minute budget: 429s are waited out, and
+`insufficient_quota` stops the build.
+
+`rag/retriever.py` scores keywords with BM25F over two fields: the passage body
+and its English descriptor. It ranks by cosine similarity to the question's
+embedding, and fuses the rankings by weighted reciprocal rank fusion, with dense
+counting double. It is a line-for-line port of the earlier Node retriever. On
+the probe's 35 questions it returns the same top four, in the same order, in all
+three modes.
+
+**Cross-lingual.** The thesis, the apprenticeship report and the SaaSOffice
+report are in French, while most visitors ask in English. The English descriptor
+lets keywords route a question to the right document, but not to the right
+passage in it. Dense retrieval reaches the French prose, and the graph's French
+rewrite gives both rankings a phrasing that matches the text.
+
+**Embeddings.** Provider, model and dimensions are recorded in `index.json`, and
+the engine embeds questions with exactly those. A question embedded by a
+different model returns confident nonsense, not an error. Recent question
+embeddings are cached, since the conversation starters are the same few strings
+for every visitor. If the embedding call fails, that turn uses keywords only.
+
+**Similarity floor.** A dense index always has a nearest neighbour, even for
+"hello". Hits below `DENSE_MIN_SIMILARITY` (0.31) are dropped. The floor is
+specific to the embedding model: re-run `probe.py --calibrate` after changing
+it.
+
+**Small talk.** Greetings and thanks are stopwords. In this corpus they occur
+only as pleasantries in interview transcripts, so matching them would cite the
+thesis under a "thanks!". `searchable()` decides whether a message has anything
+to look up. Text in a script the tokenizer cannot read, such as Arabic or
+Chinese, always counts, since the embeddings handle it.
+
+**Provenance.** Only the short document label ("my thesis") crosses the wire.
+File names, page numbers and passage text stay server-side, and the engine logs
+which pages each answer drew on. The prompt names documents the way Charaf
+would, never by file or page, and presents excerpts as source material rather
+than instructions.
+
+## Cost and limits
+
+A documents turn makes three `gpt-4o-mini` calls (route, grade and answer;
+four when the grader retries) and up to two embedding calls. A message with
+nothing to search and no history makes one call. The routing and grading prompts
+stay small: the grader sees 10 passages of about 900 characters.
+
+The quota, not the price, is the limit. When this was written, the key allowed
+**50 `gpt-4o-mini` requests per day** and 60K tokens per minute. OpenAI's error
+message offers a higher tier once a payment method is added. That is about 15
+grounded answers a day across all visitors. `probe.py --graph` alone needs about
+70 requests. Past the cap, OpenAI answers 429 and `/chat` returns 503 within
+half a second. The studio then shows its scripted replies, so the page keeps
+working, but the twin stops thinking. Add billing before any public deploy.
+
+## Observability
+
+With `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` set, each chat turn becomes
+one Langfuse trace, `twin-chat`, tagged `digital-twin`, `langgraph` and `rag`.
+It holds a span per graph node plus each model call's prompt, output, token
+counts and latency. That is where to see what the router decided, which
+passages the grader kept, and where the time went.
+
+Traces contain what visitors type, so enabling Langfuse sends their messages to
+a third party. Say so in the site's privacy notice, or redact inputs by passing
+a `mask` function to the Langfuse client in `observability.py`.
+
+## Tests and probe
+
+```sh
+cd engine && .venv/bin/python -m pytest
+```
+
+`tests/test_server.py` starts the real engine (`python -m app.main`) against
+`tests/mock_openai.py`, a local stand-in for the OpenAI API. It covers health,
+Unicode streaming, validation and history clamping, 503s for an outage, a rate
+limit and a failure at the answering step, and cancellation reaching the
+upstream request. It also checks prompt assembly, the sources frame, small talk,
+follow-ups, and the grader's retry and reranking. `tests/test_retriever.py`
+covers the dense path: an English question reaching a French passage with no
+shared words, fusion, the floor, the keyless fallback and greetings.
+`tests/test_graph.py` covers evidence assembly. The tests set `TWIN_NO_DOTENV`,
+so they never read `engine/.env`, call the real API, or trace to Langfuse.
+
+```sh
+engine/.venv/bin/python tools/knowledge/probe.py              # keywords, dense, hybrid
+engine/.venv/bin/python tools/knowledge/probe.py --graph      # the full graph, up to the answer
+engine/.venv/bin/python tools/knowledge/probe.py --calibrate  # the similarity floor
+engine/.venv/bin/python tools/knowledge/probe.py "any question"
+```
+
+The retriever modes are free apart from embeddings. `--graph` runs route,
+retrieve and grade for about 30 questions on the real model, roughly 150K
+tokens, and stops before writing answers. It exits non-zero below 8/8 routing
+or 5/8 recall. Run it after rebuilding the index or changing a prompt.
+
+## Hosting
+
+The server binds to `127.0.0.1`. For public hosting, put it behind an HTTPS
+same-origin reverse proxy, and add per-visitor rate limits, a spend cap on the
+OpenAI key, monitoring, and a privacy notice covering OpenAI (and Langfuse, if
+enabled).

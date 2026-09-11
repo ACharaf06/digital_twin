@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mascot motion lab</title>
+    <style>
+      body {
+        margin: 0;
+        background: #eeefea;
+        font: 14px system-ui;
+        color: #282c28;
+      }
+      canvas {
+        display: block;
+      }
+      #controls {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+        background: #ffffffdd;
+        border-radius: 8px;
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      #time {
+        width: 250px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <a href="/motion-lab.html?authored">Studio motion</a
+      ><a href="/motion-lab.html">Original clips</a
+      ><label
+        >Clip
+        <select id="clip"></select></label
+      ><label
+        >View
+        <select id="view">
+          <option value="front">Front</option>
+          <option value="profile">Right profile</option>
+          <option value="three-quarter">Three-quarter</option>
+        </select></label
+      ><button id="play">Play / pause</button
+      ><input
+        id="time"
+        aria-label="Animation time"
+        type="range"
+        min="0"
+        max="1"
+        value="0"
+        step="0.001"
+      /><output id="readout"></output>
+    </div>
+    <script type="module" src="/src/dev/motion-lab.ts"></script>
+  </body>
+</html>

@@ -1,11 +1,17 @@
-fastapi>=0.115
-uvicorn[standard]>=0.30
-pydantic>=2.7
-python-dotenv>=1.0
+# Python 3.11+ (LangGraph needs 3.11 for async context propagation).
+#   python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
+fastapi~=0.141
+uvicorn~=0.52
+anyio~=4.15
+pydantic~=2.13
+python-dotenv~=1.0
+numpy~=2.4
+langgraph~=1.2
+langchain~=1.4          # the Langfuse callback handler imports it
+langchain-core~=1.6
+langchain-openai~=1.6
+langfuse~=4.15
 
-# --- wire these when moving past the stub ---
-# langchain>=0.3
-# langgraph>=0.2
-# langfuse>=2.0
-# openai>=1.40
-# chromadb>=0.5        # or faiss-cpu / pgvector
+# tests
+httpx~=0.28
+pytest~=9.1
