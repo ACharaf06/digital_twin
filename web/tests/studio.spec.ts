@@ -143,8 +143,11 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
 })
 
 test('streamed replies drive the character, cancellation and reset work', async ({ page }) => {
+  const sessions: string[] = []
   await page.route('**/api/health', (route) => route.fulfill({ json: { status: 'ready' } }))
   await page.route('**/api/chat', async (route) => {
+    const body = route.request().postDataJSON() as { sessionId: string }
+    sessions.push(body.sessionId)
     await new Promise((resolve) => setTimeout(resolve, 800))
     await route.fulfill({
       contentType: 'text/event-stream',
@@ -162,12 +165,14 @@ test('streamed replies drive the character, cancellation and reset work', async 
   await expect(page.locator('.mascot-stage')).toHaveAttribute('data-mood', 'thinking')
   await expect(page.locator('.chat-message').last()).toContainText('Amadeus')
   await expect(page.locator('.chat-log')).toHaveAttribute('aria-busy', 'false')
+  expect(sessions[0]).toMatch(/^[0-9a-f-]{36}$/)
   // provenance chip: the engine named the documents it grounded the reply in
   await expect(page.locator('.message-sources')).toContainText('my thesis')
   await input.fill('Another question')
   await input.press('Enter')
   await page.getByRole('button', { name: 'Stop reply' }).click()
   await expect(page.locator('.chat-log')).toHaveAttribute('aria-busy', 'false')
+  expect(sessions[1]).toBe(sessions[0])
   await page.getByRole('button', { name: 'Reset conversation' }).click()
   await expect(page.locator('.chat-message')).toHaveCount(1)
   // The starter plays the gesture, but the words come from the engine like any
@@ -176,6 +181,7 @@ test('streamed replies drive the character, cancellation and reset work', async 
   await expect(page.locator('.mascot-stage')).toHaveAttribute('data-action', 'dance')
   await expect(page.locator('.chat-message').last()).toContainText('Amadeus')
   await expect(page.locator('.chat-message').last()).not.toContainText('dance moves')
+  expect(sessions[2]).not.toBe(sessions[0])
 })
 
 test('profile fallback, project navigation and genuine contacts', async ({ page }, info) => {

@@ -108,6 +108,8 @@ protocol and retrieval design.
 | `TWIN_PORT` | Engine port; defaults to `8000`. |
 | `ALLOWED_ORIGIN` | Comma-separated browser origins allowed by CORS. |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | Optional tracing. |
+| `LANGFUSE_HOST` | Langfuse Cloud region or self-hosted URL. |
+| `LANGFUSE_TRACING_ENVIRONMENT` | Trace environment; defaults to `development`. |
 | `TWIN_ENGINE_URL` | Vite development proxy target. |
 | `VITE_ENGINE_URL` | Frontend API base compiled into the browser build. |
 

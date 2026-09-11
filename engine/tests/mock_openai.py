@@ -197,6 +197,17 @@ class _Handler(BaseHTTPRequestHandler):
             for piece in self.server.mock.reply(messages):
                 send({"content": piece})
             send({}, "stop")
+            if (body.get("stream_options") or {}).get("include_usage"):
+                usage = {
+                    "id": "mock",
+                    "object": "chat.completion.chunk",
+                    "created": 0,
+                    "model": body.get("model"),
+                    "choices": [],
+                    "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+                }
+                self.wfile.write(f"data: {json.dumps(usage)}\n\n".encode())
+                self.wfile.flush()
             self.wfile.write(b"data: [DONE]\n\n")
         except (BrokenPipeError, ConnectionResetError):
             self.server.mock.aborted.set()

@@ -4,7 +4,7 @@ Run from engine/:
     .venv/bin/python -m app.main          # http://127.0.0.1:8000 (TWIN_PORT)
 
 Contract:
-    POST /chat {"message": str, "history": [{"role": "user"|"assistant", "content": str}]}
+    POST /chat {"message": str, "history": [...], "sessionId": str?}
     -> text/event-stream of `data: {json}` frames:
          {"sources": ["my thesis", ...]}   documents the answer draws on, first, when any
          {"delta": "..."}                   answer tokens
@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from contextlib import asynccontextmanager
 
@@ -59,7 +60,7 @@ async def lifespan(_: FastAPI):
         log.info("[model] OPENAI_API_KEY is not set: /chat answers 503 and the studio uses scripted replies")
     log.info("[tracing] %s", "Langfuse" if config.LANGFUSE_ENABLED else "off")
     yield
-    observability.flush()
+    observability.shutdown()
 
 
 app = FastAPI(title="Charaf Digital Twin Engine", lifespan=lifespan)
@@ -136,6 +137,13 @@ def clean_history(raw) -> list[dict]:
     return [{"role": t["role"], "content": t["content"][:TURN_CHARS]} for t in turns[-HISTORY_TURNS:]]
 
 
+def clean_session_id(raw) -> str | None:
+    """Accept opaque browser session ids without letting them become telemetry noise."""
+    if not isinstance(raw, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", raw):
+        return None
+    return raw
+
+
 @app.get("/health")
 async def health():
     global _model_checked, _client
@@ -144,6 +152,11 @@ async def health():
         "provider": "openai",
         "model": config.MODEL,
         "engine": "langgraph",
+        "tracing": {
+            "enabled": config.LANGFUSE_ENABLED,
+            "provider": "langfuse" if config.LANGFUSE_ENABLED else None,
+            "environment": config.LANGFUSE_ENVIRONMENT if config.LANGFUSE_ENABLED else None,
+        },
         "retrieval": {
             "ready": index.ready,
             "passages": index.size,
@@ -184,7 +197,13 @@ async def chat(request: Request):
     if not config.OPENAI_API_KEY:
         return _error(503, "model unavailable")
 
-    events = Relay(orchestrator.stream_reply(message, clean_history(data.get("history"))))
+    events = Relay(
+        orchestrator.stream_reply(
+            message,
+            clean_history(data.get("history")),
+            clean_session_id(data.get("sessionId")),
+        )
+    )
     # Hold the response until the first token. Routing, retrieval and grading
     # all happen before it, so a failure there -- a rate limit, an outage -- is
     # still a clean 503 the studio can fall back from, not a half-open stream.

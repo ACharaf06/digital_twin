@@ -30,3 +30,6 @@ LANGFUSE_ENABLED = bool(
     os.getenv("LANGFUSE_PUBLIC_KEY", "").strip()
     and os.getenv("LANGFUSE_SECRET_KEY", "").strip()
 )
+LANGFUSE_ENVIRONMENT = (
+    os.getenv("LANGFUSE_TRACING_ENVIRONMENT", "development").strip() or "development"
+)
