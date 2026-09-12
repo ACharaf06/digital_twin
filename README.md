@@ -27,7 +27,9 @@ Charaf Achir's public profile, thesis, reports, and project documents.
 │       ├── chat/               chat rendering and conversation lifecycle
 │       ├── portfolio/          work and about views
 │       ├── studio/             stage, authored rig, hands and motion
-│       ├── assets/mascot/      the two browser GLBs
+│       ├── assets/
+│       │   ├── mascot/         the two browser GLBs
+│       │   └── projects/       artwork for personal projects
 │       └── styles/             global and studio styles
 ├── engine/                     FastAPI and LangGraph service
 │   ├── agent/                  route, grade, evidence and answer graph

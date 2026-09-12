@@ -11,4 +11,11 @@ export const profile = {
 }
 
 export type Project = (typeof content.projects)[number]
-export const projects: Project[] = content.projects.filter((project) => project.featured)
+const projectOrder = ['twin', 'vision', 'loihi']
+const projectPosition = (id: string) => {
+  const position = projectOrder.indexOf(id)
+  return position === -1 ? Number.MAX_SAFE_INTEGER : position
+}
+export const projects: Project[] = content.projects
+  .filter((project) => project.featured)
+  .sort((left, right) => projectPosition(left.id) - projectPosition(right.id))

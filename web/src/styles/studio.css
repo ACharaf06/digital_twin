@@ -452,6 +452,59 @@
   scrollbar-color: #b9c3ab transparent;
   overscroll-behavior: contain;
 }
+.work-sections {
+  padding-right: 9px;
+}
+.work-section + .work-section {
+  margin-top: 34px;
+}
+.work-section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.work-section-heading > span {
+  font: 8px var(--mono);
+  color: var(--blue);
+}
+.work-section-heading h3 {
+  font-size: 15px;
+  font-weight: 650;
+}
+.experience-row {
+  padding: 15px 0 17px;
+  border-bottom: 1px solid var(--line);
+}
+.experience-row > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.experience-row strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+.experience-row > div > span {
+  max-width: 125px;
+  flex-shrink: 0;
+  text-align: right;
+  font: 7px/1.5 var(--mono);
+  color: #717768;
+}
+.experience-row > .micro-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 7px;
+}
+.experience-row p {
+  margin-top: 8px;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #717768;
+}
 .project-list {
   flex: 1;
 }
@@ -492,13 +545,20 @@
   border-radius: 4px;
   transition: transform 0.3s;
 }
-.mark-agent {
-  background: #dce4c1;
-  color: #53623b;
+.project-thumbnail {
+  width: 64px;
+  height: 54px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #cbd1c3;
+  border-radius: 4px;
+  background: #e4e8dd;
+  transition: transform 0.3s;
 }
-.mark-vision {
-  background: #eacfc5;
-  color: #925c4b;
+.project-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .mark-twin {
   background: #d8deed;
@@ -506,7 +566,8 @@
   font-family: Georgia, serif !important;
   font-size: 28px !important;
 }
-.project-row:hover .project-mark {
+.project-row:hover .project-mark,
+.project-row:hover .project-thumbnail {
   transform: rotate(-7deg);
 }
 .project-row:hover strong {
@@ -553,6 +614,23 @@
 }
 .project-detail h2 {
   margin-bottom: 22px;
+}
+.project-hero {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 100%;
+  max-height: 190px;
+  margin: -4px 0 20px;
+  border: 1px solid #cbd1c3;
+  border-radius: 5px;
+  background: #e4e8dd;
+}
+.project-hero img {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  object-fit: contain;
 }
 .project-detail p {
   font-size: 12px;
@@ -1118,6 +1196,10 @@
     width: 36px;
     height: 40px;
     font-size: 15px;
+  }
+  .project-thumbnail {
+    width: 48px;
+    height: 42px;
   }
   .project-row strong {
     font-size: 12px;

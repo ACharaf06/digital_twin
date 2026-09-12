@@ -193,8 +193,35 @@ test('unavailable AI, project navigation and genuine contacts', async ({ page },
   await expect(page.getByRole('textbox', { name: "Ask Charaf's digital twin" })).toBeDisabled()
   await expect(page.locator('.chat-message')).toHaveCount(0)
   await page.getByRole('button', { name: 'My work', exact: true }).click()
-  await page.getByRole('button', { name: /From question to action/ }).click()
-  await expect(page.locator('.project-detail')).toContainText('OctoMind')
+  await expect(page.getByRole('heading', { name: 'Professional' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Personal' })).toBeVisible()
+  await expect(page.locator('.experience-list')).toContainText('October 2025 – October 2026')
+  await expect(page.locator('.experience-list')).toContainText('3 May – 29 August 2025')
+  await expect(page.locator('.experience-list')).toContainText('June – September 2024')
+  expect(await page.locator('.project-row strong').allTextContents()).toEqual([
+    'A little more human.',
+    'Jutsu in, anime out.',
+    'From events to attention.',
+  ])
+  await page.getByRole('button', { name: /Jutsu in, anime out/ }).click()
+  await expect
+    .poll(() =>
+      page.getByRole('region', { name: 'Selected work' }).evaluate((node) => node.scrollTop),
+    )
+    .toBe(0)
+  await expect(page.locator('.project-detail')).toContainText('AnimeGANv2')
+  await expect(
+    page.getByAltText('Reference chart of twelve Naruto-inspired hand signs'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'All work' }).click()
+  await page.getByRole('button', { name: /From events to attention/ }).click()
+  await expect
+    .poll(() =>
+      page.getByRole('region', { name: 'Selected work' }).evaluate((node) => node.scrollTop),
+    )
+    .toBe(0)
+  await expect(page.locator('.project-detail')).toContainText('Intel’s Lava framework')
+  await expect(page.getByAltText('Intel Loihi neuromorphic research chip')).toBeVisible()
   await page.screenshot({ path: info.outputPath('project.png') })
   await expect(page.getByRole('button', { name: 'Ask me about this' })).toBeDisabled()
   await page.getByRole('button', { name: 'The human', exact: true }).click()

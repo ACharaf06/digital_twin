@@ -26,7 +26,7 @@ web/src/
 ├── chat/{ChatPanel,useTwinChat}.tsx|ts
 ├── portfolio/{WorkPanel,AboutPanel}.tsx
 ├── studio/{MascotStage,createStage,rig,hands,motion}.tsx|ts
-├── assets/mascot/*.glb
+├── assets/{mascot/*.glb,projects/*.webp}
 ├── lib/{portfolio,twinClient}.ts
 └── styles/{base,studio}.css
 ```
@@ -83,6 +83,7 @@ Runtime and source assets no longer share a directory:
 
 ```text
 web/src/assets/mascot/       browser-imported GLBs only
+web/src/assets/projects/     browser-imported personal-project artwork
 assets-source/mascot/        retained body rebuild input
 assets-source/knowledge/     retrieval-index inputs
 engine/knowledge/            committed index and vectors
