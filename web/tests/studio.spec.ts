@@ -172,9 +172,11 @@ test('streamed replies drive the character, cancellation and reset work', async 
   await input.press('Enter')
   await page.getByRole('button', { name: 'Stop reply' }).click()
   await expect(page.locator('.chat-log')).toHaveAttribute('aria-busy', 'false')
+  await expect(page.locator('.chat-message')).toHaveCount(3)
+  await expect(page.locator('.chat-message').last()).toContainText('Another question')
   expect(sessions[1]).toBe(sessions[0])
   await page.getByRole('button', { name: 'Reset conversation' }).click()
-  await expect(page.locator('.chat-message')).toHaveCount(1)
+  await expect(page.locator('.chat-message')).toHaveCount(0)
   // The starter plays the gesture, but the words come from the engine like any
   // other question -- so the reply is the streamed one, not a scripted line.
   await page.getByRole('button', { name: 'Surprise me', exact: true }).click()
@@ -184,16 +186,17 @@ test('streamed replies drive the character, cancellation and reset work', async 
   expect(sessions[2]).not.toBe(sessions[0])
 })
 
-test('profile fallback, project navigation and genuine contacts', async ({ page }, info) => {
+test('unavailable AI, project navigation and genuine contacts', async ({ page }, info) => {
   await page.route('**/api/health', (route) => route.fulfill({ json: { status: 'offline' } }))
   await enter(page)
-  await expect(page.locator('.console-status')).toContainText('Profile preview')
+  await expect(page.locator('.console-status')).toContainText('AI unavailable')
+  await expect(page.getByRole('textbox', { name: "Ask Charaf's digital twin" })).toBeDisabled()
+  await expect(page.locator('.chat-message')).toHaveCount(0)
   await page.getByRole('button', { name: 'My work', exact: true }).click()
   await page.getByRole('button', { name: /From question to action/ }).click()
   await expect(page.locator('.project-detail')).toContainText('OctoMind')
   await page.screenshot({ path: info.outputPath('project.png') })
-  await page.getByRole('button', { name: 'Ask me about this' }).click()
-  await expect(page.locator('.chat-message').last()).toContainText('Amadeus')
+  await expect(page.getByRole('button', { name: 'Ask me about this' })).toBeDisabled()
   await page.getByRole('button', { name: 'The human', exact: true }).click()
   await expect(page.getByRole('link', { name: profileEmail })).toHaveAttribute(
     'href',
@@ -208,6 +211,19 @@ test('profile fallback, project navigation and genuine contacts', async ({ page 
     'https://github.com/ACharaf06',
   )
   await page.screenshot({ path: info.outputPath('human.png') })
+})
+
+test('a failed live request produces no canned assistant answer', async ({ page }) => {
+  await page.route('**/api/health', (route) => route.fulfill({ json: { status: 'ready' } }))
+  await page.route('**/api/chat', (route) => route.fulfill({ status: 503 }))
+  await enter(page)
+  const input = page.getByRole('textbox', { name: "Ask Charaf's digital twin" })
+  await input.fill('Tell me about your work')
+  await input.press('Enter')
+  await expect(page.locator('.console-status')).toContainText('AI unavailable')
+  await expect(page.locator('.chat-message')).toHaveCount(1)
+  await expect(page.locator('.chat-message').first()).toContainText('Tell me about your work')
+  await expect(page.locator('.message-assistant')).toHaveCount(0)
 })
 const profileEmail = 'charaf.achir6@gmail.com'
 

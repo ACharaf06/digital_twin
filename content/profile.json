@@ -135,7 +135,7 @@
       "tags": ["Three.js", "React", "LangGraph", "OpenAI"],
       "context": "A personal portfolio should feel like meeting the person behind the work. This experiment turns an authored 3D character into an interactive digital presence.",
       "approach": "A rigged Three.js mascot responds to pointer movement, gestures, and a streaming conversational interface grounded in Charaf's public profile and source documents.",
-      "outcome": "The studio you are exploring now: an animated 3D mascot and a Python/LangGraph conversation backed by OpenAI. A clearly labelled profile preview remains available when the engine is offline."
+      "outcome": "The studio you are exploring now: an animated 3D mascot and a Python/LangGraph conversation backed by OpenAI. If the engine is unavailable, the portfolio remains usable and the chat produces no local answer."
     }
   ]
 }

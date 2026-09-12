@@ -5,12 +5,13 @@ import { profile, projects, type Project } from '../lib/portfolio'
 
 type Props = {
   hidden: boolean
+  canAsk: boolean
   onAction: (action: MascotAction) => void
   onAsk: (question: string) => Promise<void>
   onChat: () => void
 }
 
-export default function WorkPanel({ hidden, onAction, onAsk, onChat }: Props) {
+export default function WorkPanel({ hidden, canAsk, onAction, onAsk, onChat }: Props) {
   const [project, setProject] = useState<Project | null>(null)
   return (
     <section className="console-section" hidden={hidden} aria-label="Selected work">
@@ -69,6 +70,7 @@ export default function WorkPanel({ hidden, onAction, onAsk, onChat }: Props) {
           </div>
           <button
             className="text-link"
+            disabled={!canAsk}
             onClick={() => {
               onChat()
               void onAsk(

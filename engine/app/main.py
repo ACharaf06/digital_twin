@@ -57,7 +57,7 @@ async def lifespan(_: FastAPI):
     else:
         log.info("[retrieval] %d passages, lexical only (%s)", index.size, index.dense_inactive_reason)
     if not config.OPENAI_API_KEY:
-        log.info("[model] OPENAI_API_KEY is not set: /chat answers 503 and the studio uses scripted replies")
+        log.info("[model] OPENAI_API_KEY is not set: /chat answers 503 and the studio disables chat")
     log.info("[tracing] %s", "Langfuse" if config.LANGFUSE_ENABLED else "off")
     yield
     observability.shutdown()

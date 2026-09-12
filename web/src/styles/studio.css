@@ -268,6 +268,9 @@
   background: #dde1d6;
   color: var(--blue);
 }
+.subtle-icon:disabled {
+  opacity: 0.45;
+}
 .chat-log {
   flex: 1;
   overflow-y: auto;
@@ -340,9 +343,14 @@
     transform 0.2s;
   min-height: 40px;
 }
-.conversation-starters button:hover {
+.conversation-starters button:not(:disabled):hover {
   background: #d9e4bc;
   transform: translateY(-2px);
+}
+.conversation-starters button:disabled {
+  color: #8a9082;
+  cursor: default;
+  opacity: 0.65;
 }
 .conversation-starters button:last-child {
   background: #e4e8f5;
@@ -375,6 +383,10 @@
 }
 .chat-composer input:focus-visible {
   outline: none;
+}
+.chat-composer input:disabled {
+  color: #8a9082;
+  cursor: default;
 }
 .send-button {
   width: 36px;
@@ -524,9 +536,14 @@
   text-align: left;
   flex-shrink: 0;
 }
-.text-link:hover,
+.text-link:not(:disabled):hover,
 .back-link:hover {
   color: var(--blue);
+}
+.text-link:disabled {
+  color: #8a9082;
+  cursor: default;
+  opacity: 0.65;
 }
 .text-link > svg:last-child {
   margin-left: auto;

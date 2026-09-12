@@ -1,7 +1,7 @@
 /**
  * Streams a reply from the digital-twin engine via POST /api/chat (SSE).
  *
- * Enabled by VITE_ENGINE_URL. The chat retains profile answers as a fallback.
+ * Enabled by VITE_ENGINE_URL. The chat is unavailable if the engine is not ready.
  */
 export type TwinEvent =
   | { delta: string }

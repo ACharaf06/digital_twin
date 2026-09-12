@@ -34,6 +34,7 @@ export default function TwinConsole({ view, onView, onMood, onAction, onBubble, 
       />
       <WorkPanel
         hidden={view !== 'work'}
+        canAsk={chat.connection === 'Live AI'}
         onAction={onAction}
         onAsk={chat.send}
         onChat={() => onView('chat')}

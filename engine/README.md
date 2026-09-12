@@ -20,8 +20,8 @@ cp .env.example .env            # then set OPENAI_API_KEY
 
 `web/vite.config.ts` proxies the studio's `/api/*` to this port. Point it at
 another engine with `TWIN_ENGINE_URL`. Without a key the engine still starts:
-`/health` reports `offline`, `/chat` answers 503, and the studio falls back to
-its scripted replies.
+`/health` reports `offline`, `/chat` answers 503, and the studio disables chat
+without producing a local answer.
 
 | Variable | Default |
 | --- | --- |
@@ -220,8 +220,8 @@ The quota, not the price, is the limit. When this was written, the key allowed
 message offers a higher tier once a payment method is added. That is about 15
 grounded answers a day across all visitors. `probe.py --graph` alone needs about
 70 requests. Past the cap, OpenAI answers 429 and `/chat` returns 503 within
-half a second. The studio then shows its scripted replies, so the page keeps
-working, but the twin stops thinking. Add billing before any public deploy.
+half a second. The studio marks Live AI unavailable and produces no reply; the
+rest of the portfolio remains usable. Add billing before any public deploy.
 
 ## Observability
 

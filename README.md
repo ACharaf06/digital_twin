@@ -10,8 +10,8 @@ Charaf Achir's public profile, thesis, reports, and project documents.
   gaze, orbit controls, picking, and reduced motion.
 - The React chat streams grounded replies from a FastAPI/LangGraph engine and
   shows the source document labels used for an answer.
-- If the engine is unavailable, the UI clearly switches to **Profile preview**
-  and answers from the same structured public profile used by the engine.
+- If the engine is unavailable, the UI clearly switches to **AI unavailable**
+  and emits no local or canned chatbot answer.
 - If hand or motion setup fails, the authored GLB stays visible in its neutral
   pose. If the GLB or WebGL cannot render, the stage stays empty while the
   portfolio and chat remain usable. There is no image fallback.
@@ -57,7 +57,8 @@ npm run dev
 ```
 
 The site is available at the URL printed by Vite, usually
-`http://localhost:5173`. It works in Profile preview without the engine.
+`http://localhost:5173`. The portfolio remains usable without the engine, and
+the chat stays disabled until Live AI is ready.
 
 To enable Live AI in another terminal:
 
@@ -130,10 +131,10 @@ npm run test:engine
 ```
 
 The browser tests cover authored geometry and motion, orbit and picking,
-responsive layouts, chat streaming and cancellation, profile fallback, real
-contact links, reduced motion, neutral-GLB fallback, and the empty WebGL
-fallback. Engine tests run against a local mock OpenAI server and never use the
-developer's key.
+responsive layouts, chat streaming and cancellation, unavailable-engine
+behavior with no canned replies, real contact links, reduced motion,
+neutral-GLB fallback, and the empty WebGL fallback. Engine tests run against a
+local mock OpenAI server and never use the developer's key.
 
 The free retrieval probe reads its cases from `engine/eval/retrieval.json`:
 
