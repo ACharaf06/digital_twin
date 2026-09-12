@@ -17,6 +17,56 @@
     "roles": ["AI Engineer", "AI Specialist"],
     "note": "Open to conversations sooner and to a permanent role from September 2026."
   },
+  "human": {
+    "intro": "Code is only one part of my life. Give me a football, a set of decks, a good game, or a Marvel conversation and I’ll probably lose track of time.",
+    "interests": [
+      {
+        "id": "football",
+        "label": "Football",
+        "marker": "KTH / SWEDEN / DIVISION 6",
+        "story": "I still play whenever I can. During my time in Sweden, I played with KTH’s football team in Sweden’s Division 6.",
+        "bubble": "Always ready for the next match."
+      },
+      {
+        "id": "dj",
+        "label": "DJ",
+        "marker": "PART-TIME / LIVE PARTIES",
+        "story": "I DJ part-time and have played at plenty of parties. There’s something special about finding the track that changes the energy in the room.",
+        "bubble": "Let me find the right track."
+      },
+      {
+        "id": "gaming",
+        "label": "Gaming",
+        "marker": "FIFA 21 / MOROCCO",
+        "story": "I play a lot of video games. My competitive highlight is reaching the semi-finals of a Moroccan FIFA 21 tournament.",
+        "bubble": "One more game. Then one more."
+      },
+      {
+        "id": "marvel",
+        "label": "Marvel",
+        "marker": "THE FIRST SPARK",
+        "story": "I’m a huge Marvel fan. Tony Stark was the first character who made engineering feel exciting enough that I wanted to become an engineer myself.",
+        "bubble": "Sometimes inspiration wears an iron suit."
+      }
+    ],
+    "curiosities": [
+      {
+        "id": "skydiving",
+        "label": "Skydiving",
+        "note": "I want to complete my first solo skydive before the end of the year."
+      },
+      {
+        "id": "gta6",
+        "label": "GTA VI",
+        "note": "Yes, I’m counting the days."
+      },
+      {
+        "id": "doomsday",
+        "label": "Avengers: Doomsday",
+        "note": "The next big date on my Marvel calendar."
+      }
+    ]
+  },
   "experience": [
     {
       "organization": "Amadeus",
@@ -42,22 +92,28 @@
   ],
   "education": [
     {
-      "school": "Grenoble INP – Ensimag & Grenoble EM",
+      "school": "Grenoble INP – Ensimag & Grenoble École de Management",
       "period": "2025–2026",
       "degree": "Mastère Spécialisé® Big Data",
-      "details": "In progress alongside the Amadeus apprenticeship. Written work includes a professional thesis on AI-native decision systems and an apprenticeship experience report."
+      "location": "Grenoble, France",
+      "status": "Current",
+      "details": "A postgraduate program pursued alongside the Amadeus apprenticeship. Academic work includes a professional thesis on AI-native decision systems and an experience report on taking GenAI prototypes toward production."
     },
     {
       "school": "Polytech Nice-Sophia",
       "period": "2023–2025",
       "degree": "Engineering degree, Artificial Intelligence major",
-      "details": "Master level, top 10%, with an exchange semester at KTH Royal Institute of Technology in Stockholm."
+      "location": "Nice, France",
+      "status": "Completed",
+      "details": "Master-level engineering degree, completed in the top 10%, including an exchange semester at KTH Royal Institute of Technology in Stockholm, Sweden."
     },
     {
       "school": "Université Grenoble Alpes",
       "period": "2020–2023",
       "degree": "BSc Applied Mathematics & Computer Science (MIASHS)",
-      "details": "Top 5%."
+      "location": "Grenoble, France",
+      "status": "Completed",
+      "details": "A multidisciplinary foundation in applied mathematics and computer science, completed in the top 5%."
     }
   ],
   "distinctions": [

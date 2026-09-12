@@ -2,9 +2,10 @@ import ChatPanel from '../chat/ChatPanel'
 import { useTwinChat } from '../chat/useTwinChat'
 import type { MascotAction, MascotMood } from '../studio/rig'
 import AboutPanel from '../portfolio/AboutPanel'
+import StudiesPanel from '../portfolio/StudiesPanel'
 import WorkPanel from '../portfolio/WorkPanel'
 
-export type StudioView = 'chat' | 'work' | 'about'
+export type StudioView = 'chat' | 'work' | 'studies' | 'about'
 
 type Props = {
   view: StudioView
@@ -39,7 +40,8 @@ export default function TwinConsole({ view, onView, onMood, onAction, onBubble, 
         onAsk={chat.send}
         onChat={() => onView('chat')}
       />
-      <AboutPanel hidden={view !== 'about'} onBubble={onBubble} />
+      <StudiesPanel hidden={view !== 'studies'} />
+      <AboutPanel hidden={view !== 'about'} onAction={onAction} onBubble={onBubble} />
     </div>
   )
 }

@@ -10,6 +10,8 @@ Charaf Achir's public profile, thesis, reports, and project documents.
   gaze, orbit controls, picking, and reduced motion.
 - The React chat streams grounded replies from a FastAPI/LangGraph engine and
   shows the source document labels used for an answer.
+- Work, studies, and personal interests have separate views. The Human view
+  pairs interactive stories with animated scenes and mascot reactions.
 - If the engine is unavailable, the UI clearly switches to **AI unavailable**
   and emits no local or canned chatbot answer.
 - If hand or motion setup fails, the authored GLB stays visible in its neutral
@@ -25,7 +27,7 @@ Charaf Achir's public profile, thesis, reports, and project documents.
 │   └── src/
 │       ├── app/                application shell and studio state
 │       ├── chat/               chat rendering and conversation lifecycle
-│       ├── portfolio/          work and about views
+│       ├── portfolio/          work, studies and about views
 │       ├── studio/             stage, authored rig, hands and motion
 │       ├── assets/
 │       │   ├── mascot/         the two browser GLBs

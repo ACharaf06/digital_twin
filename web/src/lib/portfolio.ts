@@ -4,6 +4,7 @@ export const profile = {
   ...content.identity,
   ...content.contact,
   availability: content.availability,
+  human: content.human,
   experience: content.experience,
   education: content.education,
   distinctions: content.distinctions,

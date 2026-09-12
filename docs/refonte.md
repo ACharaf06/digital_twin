@@ -24,7 +24,7 @@ The frontend is divided by ownership:
 web/src/
 ├── app/App.tsx
 ├── chat/{ChatPanel,useTwinChat}.tsx|ts
-├── portfolio/{WorkPanel,AboutPanel}.tsx
+├── portfolio/{WorkPanel,StudiesPanel,AboutPanel}.tsx
 ├── studio/{MascotStage,createStage,rig,hands,motion}.tsx|ts
 ├── assets/{mascot/*.glb,projects/*.webp}
 ├── lib/{portfolio,twinClient}.ts
@@ -33,8 +33,8 @@ web/src/
 
 `TwinConsole` is now a small composition layer. Network health, cancellation,
 history, SSE assembly, unavailable-engine handling, and voice live in `useTwinChat`.
-Projects and the human profile render in their own modules. `MascotStage` is a
-thin React adapter around the imperative lifecycle in `createStage`. The stage
+Projects, studies, and the human profile render in their own modules. `MascotStage`
+is a thin React adapter around the imperative lifecycle in `createStage`. The stage
 uses a single authored rig implementation; normalization and resource ownership
 live in `rig.ts`, while motion and hands remain explicit domains.
 

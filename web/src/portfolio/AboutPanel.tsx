@@ -1,55 +1,164 @@
 import { useState } from 'react'
-import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Check,
+  Copy,
+  Film,
+  Gamepad2,
+  Github,
+  Linkedin,
+  Mail,
+  Music2,
+  Plane,
+  Trophy,
+  Zap,
+} from 'lucide-react'
 import { profile } from '../lib/portfolio'
+import type { MascotAction } from '../studio/rig'
 
 type Props = {
   hidden: boolean
+  onAction: (action: MascotAction) => void
   onBubble: (text: string) => void
 }
 
-export default function AboutPanel({ hidden, onBubble }: Props) {
+const interestIcons = {
+  football: Trophy,
+  dj: Music2,
+  gaming: Gamepad2,
+  marvel: Zap,
+} as const
+
+const interestActions: Record<string, MascotAction> = {
+  football: 'jump',
+  dj: 'dance',
+  gaming: 'present',
+  marvel: 'spin',
+}
+
+const curiosityIcons = {
+  skydiving: Plane,
+  gta6: Gamepad2,
+  doomsday: Film,
+} as const
+
+function InterestVisual({ id }: { id: string }) {
+  if (id === 'football')
+    return (
+      <div className="football-pitch" aria-hidden="true">
+        <span className="pitch-circle" />
+        <span className="football-ball" />
+        <strong>KTH</strong>
+        <small>DIV. 6 / SWEDEN</small>
+      </div>
+    )
+
+  if (id === 'dj')
+    return (
+      <div className="dj-deck" aria-hidden="true">
+        <span className="vinyl-record">
+          <i />
+        </span>
+        <span className="tone-arm" />
+        <span className="equalizer">
+          {Array.from({ length: 8 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </span>
+        <small>LIVE / AFTER DARK</small>
+      </div>
+    )
+
+  if (id === 'gaming')
+    return (
+      <div className="game-screen" aria-hidden="true">
+        <span>FIFA 21</span>
+        <Gamepad2 size={46} strokeWidth={1.4} />
+        <strong>SEMI-FINALIST</strong>
+        <small>MOROCCO</small>
+      </div>
+    )
+
+  return (
+    <div className="marvel-reactor" aria-hidden="true">
+      <span className="reactor-ring">
+        <i />
+      </span>
+      <strong>THE FIRST SPARK</strong>
+      <small>ENGINEERING, ASSEMBLE.</small>
+    </div>
+  )
+}
+
+export default function AboutPanel({ hidden, onAction, onBubble }: Props) {
   const [copied, setCopied] = useState(false)
+  const [interestId, setInterestId] = useState(profile.human.interests[0].id)
+  const interest =
+    profile.human.interests.find((item) => item.id === interestId) ?? profile.human.interests[0]
+
   return (
     <section className="console-section" hidden={hidden} aria-label={`About ${profile.name}`}>
-      <div className="console-heading">
+      <div className="console-heading human-heading">
         <div>
           <span className="micro-label">THE PERSON BEHIND THE POLYGONS</span>
           <h2>
-            {profile.name}
-            <span className="blue-period">.</span>
+            Human, definitely<span className="blue-period">.</span>
           </h2>
         </div>
       </div>
-      <div className="human-story">
-        <p className="story-lead">
-          An {profile.role.toLowerCase()}. A curious mind.
-          <br />A builder at heart.
-        </p>
-        <p>{profile.story}</p>
-        <div className="story-timeline">
-          <div>
-            <span>NOW</span>
-            <p>
-              {profile.experience[0].role} at <strong>{profile.experience[0].organization}</strong>
-            </p>
-          </div>
-          <div>
-            <span>{profile.education[0].period}</span>
-            <p>
-              {profile.education[0].degree}
-              <br />
-              <strong>{profile.education[0].school}</strong>
-            </p>
-          </div>
-          <div>
-            <span>BEFORE</span>
-            <p>
-              {profile.education[1].degree}, {profile.education[1].school}.{' '}
-              {profile.experience[2].role} at {profile.experience[2].organization}.{' '}
-              {profile.experience[1].role} at {profile.experience[1].organization}.
-            </p>
-          </div>
+
+      <p className="human-intro">{profile.human.intro}</p>
+
+      <div className="human-selector" role="group" aria-label="Explore Charaf beyond work">
+        {profile.human.interests.map((item) => {
+          const Icon = interestIcons[item.id as keyof typeof interestIcons]
+          return (
+            <button
+              className={interest.id === item.id ? 'is-active' : ''}
+              key={item.id}
+              aria-pressed={interest.id === item.id}
+              onClick={() => {
+                setInterestId(item.id)
+                onAction(interestActions[item.id] ?? 'present')
+                onBubble(item.bubble)
+              }}
+            >
+              <Icon size={15} />
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <article className="human-feature" key={interest.id}>
+        <div className="human-visual">
+          <InterestVisual id={interest.id} />
         </div>
+        <div className="human-feature-copy">
+          <span className="micro-label">{interest.marker}</span>
+          <h3>{interest.label}</h3>
+          <p>{interest.story}</p>
+        </div>
+      </article>
+
+      <section className="human-side-quests" aria-labelledby="side-quests-title">
+        <span className="micro-label">CURRENTLY CURIOUS ABOUT</span>
+        <h3 id="side-quests-title">Current side quests.</h3>
+        <div className="curiosity-grid">
+          {profile.human.curiosities.map((item) => {
+            const Icon = curiosityIcons[item.id as keyof typeof curiosityIcons]
+            return (
+              <article className={`curiosity-card curiosity-${item.id}`} key={item.id}>
+                <Icon size={18} />
+                <strong>{item.label}</strong>
+                <p>{item.note}</p>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <div className="human-contact">
         <span className="micro-label">LET'S MAKE SOMETHING MATTER</span>
         <div className="contact-email">
           <a href={`mailto:${profile.email}`}>

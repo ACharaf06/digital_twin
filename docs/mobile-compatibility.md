@@ -2,8 +2,8 @@
 
 The studio uses a shared Three.js scene with a desktop conversation column and
 a stacked layout at 900px and below. The character remains visible above the
-chat. Compact phones use a shorter scene and console; chat history and project
-details scroll independently.
+chat. Compact phones use a shorter scene and console; chat history, project
+details, the studies timeline, and interactive Human stories scroll independently.
 
 ## Verification
 
