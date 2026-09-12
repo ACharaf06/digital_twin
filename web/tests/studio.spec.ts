@@ -155,7 +155,12 @@ test('streamed replies drive the character, cancellation and reset work', async 
   await page.route('**/api/chat', async (route) => {
     const body = route.request().postDataJSON() as { sessionId: string }
     sessions.push(body.sessionId)
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    // How long a reply stays in flight, which is the window the cancellation
+    // below has to click inside. Once it closes, React reuses the button node
+    // for the disabled send button, so a late click waits on an element that
+    // can never become enabled. Wide enough that a machine rendering the stage
+    // in software still wins the race.
+    await new Promise((resolve) => setTimeout(resolve, 3000))
     await route.fulfill({
       contentType: 'text/event-stream',
       body:
