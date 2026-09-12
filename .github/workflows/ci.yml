@@ -1,0 +1,53 @@
+# What has to be true before anything reaches production.
+#
+# The engine suite is fast and hermetic: conftest.py sets TWIN_NO_DOTENV and the
+# tests drive a local mock of the OpenAI API, so a run never reads a real key,
+# spends quota, or traces to Langfuse.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # LangGraph needs 3.11 for async context propagation
+          cache: pip
+          cache-dependency-path: engine/requirements-dev.txt
+      - run: pip install -r engine/requirements-dev.txt
+      - run: python -m pytest
+        working-directory: engine # imports are top-level; pytest.ini sets pythonpath
+
+  studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run format:check
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      # playwright.config.ts falls back to its own Chromium when the macOS
+      # Chrome path is absent, so the suite runs here unchanged.
+      - run: npx playwright install --with-deps chromium
+        working-directory: web
+      - run: npm test
+        working-directory: web
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-failures
+          path: web/test-results/
+          retention-days: 7
