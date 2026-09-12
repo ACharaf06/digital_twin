@@ -6,6 +6,13 @@
   // site in return.
   "name": "digital-twin",
   "compatibility_date": "2026-09-12",
+  // The domain is declared here rather than clicked into the dashboard, so a
+  // deploy from a clean checkout lands on the real site. Cloudflare owns the
+  // zone, so it writes the DNS record and issues the certificate itself.
+  "routes": [
+    { "pattern": "charafachir.com", "custom_domain": true },
+    { "pattern": "www.charafachir.com", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./web/dist",
     // One entry point: any unknown path is the app, not a 404.
