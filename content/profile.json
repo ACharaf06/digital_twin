@@ -21,23 +21,23 @@
     {
       "organization": "Amadeus",
       "role": "GenAI Developer",
-      "period": "Apprenticeship through September 2026",
-      "location": "France",
-      "summary": "Builds GenAI for LCP, the Amadeus loyalty platform. Built the configuration-chatbot proof of concept independently, helped establish the OctoMind team, and now works on Member Insight, the chatbot, and technical documentation for the AI stack."
+      "period": "October 2025 – October 2026",
+      "location": "Nice, France",
+      "summary": "Building GenAI for the Amadeus loyalty platform, from an independent configuration-chatbot prototype to Member Insight and production work within the OctoMind team."
     },
     {
       "organization": "SaaSOffice",
       "role": "AI Engineer intern",
-      "period": "2025",
+      "period": "3 May – 29 August 2025",
       "location": "Sophia Antipolis, France",
-      "summary": "Built and deployed client-facing and staff-facing assistants, including incoming-user qualification and quantitative portfolio analysis."
+      "summary": "Built and deployed client-facing and staff-facing assistants for incoming-user qualification and quantitative portfolio analysis."
     },
     {
       "organization": "Inria",
       "role": "NLP & ML Engineer intern",
-      "period": "2024",
+      "period": "June – September 2024",
       "location": "Sophia Antipolis, France",
-      "summary": "Research-oriented natural-language-processing and machine-learning engineering."
+      "summary": "Worked on research-oriented natural-language processing and machine-learning engineering."
     }
   ],
   "education": [
@@ -72,15 +72,15 @@
   },
   "projects": [
     {
-      "id": "agent",
+      "id": "loihi",
       "featured": true,
-      "name": "From question to action.",
-      "category": "AMADEUS / APPLIED AI",
-      "description": "An assistant that understands a loyalty platform, then gets things done.",
-      "tags": ["RAG", "LangGraph", "Azure OpenAI"],
-      "context": "Loyalty-platform configuration means navigating complex documentation and product rules. At Amadeus, I explored how a conversational assistant could make that knowledge actionable.",
-      "approach": "I built the configuration-chatbot proof of concept independently: retrieval over product documentation, then a hybrid approach combining code-generated documentation and function calling.",
-      "outcome": "Client and prospect demos helped build support for a dedicated team, OctoMind, to take these AI use cases toward production. My work also includes Member Insight and technical documentation for the AI stack."
+      "name": "From events to attention.",
+      "category": "PERSONAL LAB / NEUROMORPHIC VISION",
+      "description": "Spiking neural networks turn asynchronous camera events into visual-attention maps.",
+      "tags": ["Lava", "Spiking Neural Networks", "Event Cameras", "DVS128 Gesture", "Loihi"],
+      "context": "Traditional cameras process complete frames, even when very little changes. Event cameras capture only changes in the scene, making them ideal for fast and energy-efficient perception. In this project, I explored how spiking neural networks could identify visually salient regions in asynchronous event streams.",
+      "approach": "I adapted an existing PyNN visual-attention model to Intel’s Lava framework. The prototype processes DVS128 Gesture data, converts events into spikes, and uses LIF neurons, spatial connections, lateral inhibition, and experimental STDP learning to generate attention maps.",
+      "outcome": "Currently running through software simulation, the project provides a foundation for Loihi-based execution and performance benchmarking. Its potential applications include low-power robotics, autonomous systems, and real-time edge vision."
     },
     {
       "id": "member-insight",
@@ -118,10 +118,10 @@
     {
       "id": "vision",
       "featured": true,
-      "name": "Reality, remixed.",
+      "name": "Jutsu in, anime out.",
       "category": "PERSONAL LAB / COMPUTER VISION",
-      "description": "Live anime style transfer. Your webcam, a neural network, and a hand sign.",
-      "tags": ["PyTorch", "AnimeGANv2", "MediaPipe"],
+      "description": "Naruto hand-sign recognition controls live AnimeGANv2 style transfer.",
+      "tags": ["Naruto hand signs", "AnimeGANv2", "MediaPipe", "PyTorch / MPS"],
       "context": "A creative experiment at the intersection of computer vision, real-time inference, and anime. What if changing a visual effect felt like casting it?",
       "approach": "AnimeGANv2 transforms live webcam frames in PyTorch on Apple Silicon. MediaPipe tracks hand landmarks so Naruto-inspired hand signs can switch visual modes.",
       "outcome": "A live, gesture-driven style-transfer experience that connects model inference to a playful physical interaction. This is a personal experiment, not a production product."
@@ -135,7 +135,7 @@
       "tags": ["Three.js", "React", "LangGraph", "OpenAI"],
       "context": "A personal portfolio should feel like meeting the person behind the work. This experiment turns an authored 3D character into an interactive digital presence.",
       "approach": "A rigged Three.js mascot responds to pointer movement, gestures, and a streaming conversational interface grounded in Charaf's public profile and source documents.",
-      "outcome": "The studio you are exploring now: an animated 3D mascot and a Python/LangGraph conversation backed by OpenAI. A clearly labelled profile preview remains available when the engine is offline."
+      "outcome": "The studio you are exploring now: an animated 3D mascot and a Python/LangGraph conversation backed by OpenAI. If the engine is unavailable, the portfolio remains usable and the chat produces no local answer."
     }
   ]
 }

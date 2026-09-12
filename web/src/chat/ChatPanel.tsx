@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ArrowUp, ArrowUpRight, FileText, RotateCcw, Square } from 'lucide-react'
 import type { MascotAction, MascotMood } from '../studio/rig'
-import type { Message } from './useTwinChat'
+import type { Connection, Message } from './useTwinChat'
 
 const suggestions: [string, string, MascotAction?][] = [
   ['What do you build?', 'Tell me about your work at Amadeus'],
@@ -20,7 +20,7 @@ type Props = {
   messages: Message[]
   input: string
   busy: boolean
-  connection: string
+  connection: Connection
   onInput: (value: string) => void
   onSend: (question: string, gesture?: MascotAction) => Promise<void>
   onStop: () => void
@@ -41,6 +41,7 @@ export default function ChatPanel({
   onMood,
 }: Props) {
   const log = useRef<HTMLDivElement>(null)
+  const available = connection === 'Live AI'
   useEffect(() => {
     log.current?.scrollTo({ top: log.current.scrollHeight, behavior: 'instant' })
   }, [messages, hidden])
@@ -58,7 +59,7 @@ export default function ChatPanel({
           className="subtle-icon"
           title="Reset conversation"
           aria-label="Reset conversation"
-          disabled={busy}
+          disabled={busy || messages.length === 0}
           onClick={onReset}
         >
           <RotateCcw size={16} />
@@ -88,10 +89,10 @@ export default function ChatPanel({
           </div>
         ))}
       </div>
-      {messages.length === 1 && (
+      {messages.length === 0 && (
         <div className="conversation-starters">
           {suggestions.map(([label, prompt, gesture]) => (
-            <button key={label} onClick={() => void onSend(prompt, gesture)}>
+            <button key={label} disabled={!available} onClick={() => void onSend(prompt, gesture)}>
               {label}
               <ArrowUpRight size={14} />
             </button>
@@ -110,11 +111,18 @@ export default function ChatPanel({
           value={input}
           maxLength={2000}
           autoComplete="off"
-          placeholder="Ask me anything..."
+          disabled={!available}
+          placeholder={
+            available
+              ? 'Ask me anything...'
+              : connection === 'Checking connection'
+                ? 'Connecting...'
+                : 'Live AI unavailable'
+          }
           aria-label="Ask Charaf's digital twin"
           onChange={(event) => onInput(event.target.value)}
           onFocus={() => {
-            if (!busy) onMood('listening')
+            if (available && !busy) onMood('listening')
           }}
           onBlur={() => {
             if (!busy) onMood('idle')
@@ -128,7 +136,7 @@ export default function ChatPanel({
           <button
             className="send-button"
             type="submit"
-            disabled={!input.trim()}
+            disabled={!available || !input.trim()}
             aria-label="Send message"
           >
             <ArrowUp size={19} />

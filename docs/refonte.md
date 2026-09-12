@@ -26,13 +26,13 @@ web/src/
 ├── chat/{ChatPanel,useTwinChat}.tsx|ts
 ├── portfolio/{WorkPanel,AboutPanel}.tsx
 ├── studio/{MascotStage,createStage,rig,hands,motion}.tsx|ts
-├── assets/mascot/*.glb
+├── assets/{mascot/*.glb,projects/*.webp}
 ├── lib/{portfolio,twinClient}.ts
 └── styles/{base,studio}.css
 ```
 
 `TwinConsole` is now a small composition layer. Network health, cancellation,
-history, SSE assembly, offline replies, and voice live in `useTwinChat`.
+history, SSE assembly, unavailable-engine handling, and voice live in `useTwinChat`.
 Projects and the human profile render in their own modules. `MascotStage` is a
 thin React adapter around the imperative lifecycle in `createStage`. The stage
 uses a single authored rig implementation; normalization and resource ownership
@@ -51,6 +51,11 @@ GLB or WebGL cannot render -> empty stage; portfolio and chat remain usable
 The old image fallback and landmark-generated procedural character were removed.
 The tests assert that WebGL failure produces neither a canvas nor an image, and
 that hand setup failure keeps the authored GLB visible with `data-motion=neutral`.
+
+The chat has no local response generator. Every assistant message comes from
+the Python engine. While the engine is checking or unavailable, the composer
+and project chat actions are disabled; a failed request removes an empty
+assistant placeholder instead of substituting a canned answer.
 
 ## Removed production ambiguity
 
@@ -78,6 +83,7 @@ Runtime and source assets no longer share a directory:
 
 ```text
 web/src/assets/mascot/       browser-imported GLBs only
+web/src/assets/projects/     browser-imported personal-project artwork
 assets-source/mascot/        retained body rebuild input
 assets-source/knowledge/     retrieval-index inputs
 engine/knowledge/            committed index and vectors
@@ -128,5 +134,6 @@ TWIN_NO_DOTENV=1 OPENAI_API_KEY= engine/.venv/bin/python tools/knowledge/probe.p
 ```
 
 The free probe must keep lexical routing at 8/8. Browser validation must cover
-normal motion, reduced motion, live and offline chat, cancellation, contacts,
-all tested viewports, the neutral GLB fallback, and the empty WebGL fallback.
+normal motion, reduced motion, live chat, unavailable-engine behavior,
+cancellation, contacts, all tested viewports, the neutral GLB fallback, and the
+empty WebGL fallback.
