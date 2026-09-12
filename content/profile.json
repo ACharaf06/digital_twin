@@ -42,22 +42,28 @@
   ],
   "education": [
     {
-      "school": "Grenoble INP – Ensimag & Grenoble EM",
+      "school": "Grenoble INP – Ensimag & Grenoble École de Management",
       "period": "2025–2026",
       "degree": "Mastère Spécialisé® Big Data",
-      "details": "In progress alongside the Amadeus apprenticeship. Written work includes a professional thesis on AI-native decision systems and an apprenticeship experience report."
+      "location": "Grenoble, France",
+      "status": "Current",
+      "details": "A postgraduate program pursued alongside the Amadeus apprenticeship. Academic work includes a professional thesis on AI-native decision systems and an experience report on taking GenAI prototypes toward production."
     },
     {
       "school": "Polytech Nice-Sophia",
       "period": "2023–2025",
       "degree": "Engineering degree, Artificial Intelligence major",
-      "details": "Master level, top 10%, with an exchange semester at KTH Royal Institute of Technology in Stockholm."
+      "location": "Nice, France",
+      "status": "Completed",
+      "details": "Master-level engineering degree, completed in the top 10%, including an exchange semester at KTH Royal Institute of Technology in Stockholm, Sweden."
     },
     {
       "school": "Université Grenoble Alpes",
       "period": "2020–2023",
       "degree": "BSc Applied Mathematics & Computer Science (MIASHS)",
-      "details": "Top 5%."
+      "location": "Grenoble, France",
+      "status": "Completed",
+      "details": "A multidisciplinary foundation in applied mathematics and computer science, completed in the top 5%."
     }
   ],
   "distinctions": [

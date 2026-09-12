@@ -25,7 +25,7 @@ Charaf Achir's public profile, thesis, reports, and project documents.
 │   └── src/
 │       ├── app/                application shell and studio state
 │       ├── chat/               chat rendering and conversation lifecycle
-│       ├── portfolio/          work and about views
+│       ├── portfolio/          work, studies and about views
 │       ├── studio/             stage, authored rig, hands and motion
 │       ├── assets/
 │       │   ├── mascot/         the two browser GLBs

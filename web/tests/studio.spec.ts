@@ -113,6 +113,10 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
         }
       return {
         width: document.documentElement.scrollWidth,
+        tabs: {
+          clientWidth: document.querySelector('.studio-tabs')!.clientWidth,
+          scrollWidth: document.querySelector('.studio-tabs')!.scrollWidth,
+        },
         collisions,
         overflow: Array.from(document.querySelectorAll('h1,h2,p,button,input,a'))
           .filter(
@@ -126,6 +130,9 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
       }
     })
     expect(layout.width, `${width} page width`).toBe(width)
+    expect(layout.tabs.scrollWidth, `${width} tab width`).toBeLessThanOrEqual(
+      layout.tabs.clientWidth,
+    )
     expect(layout.collisions, `${width} collisions`).toEqual([])
     expect(layout.overflow, `${width} text overflow`).toEqual([])
     const canvasPixels = PNG.sync.read(await page.locator('canvas').screenshot())
@@ -224,6 +231,18 @@ test('unavailable AI, project navigation and genuine contacts', async ({ page },
   await expect(page.getByAltText('Intel Loihi neuromorphic research chip')).toBeVisible()
   await page.screenshot({ path: info.outputPath('project.png') })
   await expect(page.getByRole('button', { name: 'Ask me about this' })).toBeDisabled()
+  await page.getByRole('button', { name: 'Studies', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Studies' })).toBeVisible()
+  expect(await page.locator('.study-card h3').allTextContents()).toEqual([
+    'Mastère Spécialisé® Big Data',
+    'Engineering degree, Artificial Intelligence major',
+    'BSc Applied Mathematics & Computer Science (MIASHS)',
+  ])
+  await expect(page.locator('.study-list')).toContainText('2025–2026')
+  await expect(page.locator('.study-list')).toContainText('2023–2025')
+  await expect(page.locator('.study-list')).toContainText('2020–2023')
+  await expect(page.locator('.study-list')).toContainText('KTH Royal Institute of Technology')
+  await expect(page.locator('.study-list')).toContainText('top 5%')
   await page.getByRole('button', { name: 'The human', exact: true }).click()
   await expect(page.getByRole('link', { name: profileEmail })).toHaveAttribute(
     'href',

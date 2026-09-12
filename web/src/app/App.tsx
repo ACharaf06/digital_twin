@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Asterisk,
   BriefcaseBusiness,
+  GraduationCap,
   Hand,
   MessageCircle,
   Music2,
@@ -188,6 +189,7 @@ export default function App() {
             [
               { id: 'chat', label: 'The twin', icon: MessageCircle },
               { id: 'work', label: 'My work', icon: BriefcaseBusiness },
+              { id: 'studies', label: 'Studies', icon: GraduationCap },
               { id: 'about', label: 'The human', icon: UserRound },
             ] as const
           ).map((tab) => (
