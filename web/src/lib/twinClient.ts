@@ -15,7 +15,9 @@ export type Turn = { role: string; content: string }
 const ENGINE_URL = import.meta.env.VITE_ENGINE_URL ?? '/api'
 
 export async function checkEngine(signal?: AbortSignal): Promise<boolean> {
-  const timeout = AbortSignal.timeout(5000)
+  // Generous on purpose: an engine that scales to zero wakes up on this very
+  // request, and a timeout here is what the visitor reads as "AI unavailable".
+  const timeout = AbortSignal.timeout(10000)
   const response = await fetch(`${ENGINE_URL}/health`, {
     signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   })

@@ -33,3 +33,15 @@ LANGFUSE_ENABLED = bool(
 LANGFUSE_ENVIRONMENT = (
     os.getenv("LANGFUSE_TRACING_ENVIRONMENT", "development").strip() or "development"
 )
+
+# A public /chat spends OpenAI quota on every call, so it needs a ceiling that
+# holds before any model request is made. CHAT_DAILY_MAX is the backstop for
+# traffic spread across many addresses; 0 disables it.
+CHAT_BURST = int(os.getenv("CHAT_BURST", "4"))
+CHAT_PER_MINUTE = float(os.getenv("CHAT_PER_MINUTE", "4"))
+CHAT_DAILY_MAX = int(os.getenv("CHAT_DAILY_MAX", "200"))
+# How many proxies append to X-Forwarded-For after the visitor's own address.
+# Cloud Run appends the caller's address (1); a load balancer in front of it
+# appends its own after that (2). Getting this wrong files every visitor under
+# one bucket, so confirm it against a real request before trusting the limit.
+TRUSTED_PROXY_HOPS = int(os.getenv("TRUSTED_PROXY_HOPS", "1"))
