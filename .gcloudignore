@@ -1,0 +1,18 @@
+.git/
+web/
+assets-source/
+tools/
+docs/
+engine/.venv/
+engine/.env
+engine/tests/
+engine/eval/
+engine/.pytest_cache/
+**/__pycache__/
+**/*.py[cod]
+# Uploaded to Cloud Build, so this is about what leaves the machine as much as
+# what lands in the image. Secrets reach the service through Secret Manager.
+.env
+.env.*
+!.env.example
+Claude outputs/
