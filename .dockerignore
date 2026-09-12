@@ -1,0 +1,12 @@
+.git/
+web/
+assets-source/
+tools/
+docs/
+engine/.venv/
+engine/.env
+engine/tests/
+engine/eval/
+engine/.pytest_cache/
+**/__pycache__/
+**/*.py[cod]

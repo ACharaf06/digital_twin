@@ -298,9 +298,12 @@ or 5/8 recall. Run it after rebuilding the index or changing a prompt.
 
 ## Hosting
 
-`python -m app.main` binds `127.0.0.1`, for development. `Dockerfile` builds the
-image a container host runs, binding `0.0.0.0` on `$PORT` — the working
-directory is part of the contract, since imports are top-level. Boot to a
+`python -m app.main` binds `127.0.0.1`, for development. The repository's root
+`Dockerfile` builds the image a container host runs, binding `0.0.0.0` on
+`$PORT` — the working directory is part of the contract, since imports are
+top-level, and the build context is the repository root rather than this
+directory, because `agent/prompts.py` reads `content/profile.json` from above
+it. Boot to a
 served `/health` is **0.9 s** and the process holds **~110 MB**, both measured
 in the container, which is what makes scaling to zero reasonable here: the
 committed index ships inside the image, so a cold start reads it from local

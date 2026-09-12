@@ -59,8 +59,11 @@ with `CHROME_PATH`.
   rig setup, picking, and disposal.
 - `web/src/assets/mascot/` contains the only browser GLBs.
 - `engine/` is the only server implementation. Its LangGraph route is route →
-  retrieve → grade → evidence → generate. `engine/Dockerfile` is how it is
-  deployed; `python -m app.main` is for development only.
+  retrieve → grade → evidence → generate. The root `Dockerfile` is how it is
+  deployed; `python -m app.main` is for development only. The build context is
+  the repository root, not `engine/`: `agent/prompts.py` resolves
+  `content/profile.json` from two directories above itself, so the engine only
+  runs inside the repository layout.
 - `assets-source/knowledge/` contains index inputs;
   `engine/knowledge/{index.json,index-vectors.bin}` is the committed runtime
   index.
