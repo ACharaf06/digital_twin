@@ -28,6 +28,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from agent import prompts
+from observability import retrieval_trace
 from rag.retriever import CHAR_BUDGET, KnowledgeIndex, searchable
 
 log = logging.getLogger("twin")
@@ -109,13 +110,33 @@ def build_graph(
     which is what the probe measures."""
 
     def chat(**options) -> ChatOpenAI:
-        return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, max_retries=max_retries, **options)
+        return ChatOpenAI(
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            max_retries=max_retries,
+            **options,
+        )
 
     # Structured steps are never streamed: their JSON is useless half-written,
     # and LangGraph's token stream would otherwise switch them to streaming.
-    router = chat(temperature=0, max_tokens=300, timeout=20, disable_streaming=True).with_structured_output(RouteDecision)
-    grader = chat(temperature=0, max_tokens=100, timeout=20, disable_streaming=True).with_structured_output(Grade)
-    writer = chat(temperature=0.3, max_tokens=450, timeout=60, streaming=True)
+    router = (
+        chat(temperature=0, max_tokens=300, timeout=20, disable_streaming=True)
+        .with_structured_output(RouteDecision)
+        .with_config(run_name="classify-intent")
+    )
+    grader = (
+        chat(temperature=0, max_tokens=100, timeout=20, disable_streaming=True)
+        .with_structured_output(Grade)
+        .with_config(run_name="grade-context")
+    )
+    writer = chat(
+        temperature=0.3,
+        max_tokens=450,
+        timeout=60,
+        streaming=True,
+        stream_usage=True,
+    ).with_config(run_name="generate-response")
     profile = prompts.load_profile()
 
     async def route(state: TwinState) -> TwinState:
@@ -125,7 +146,9 @@ def build_graph(
             # earlier turn for it to follow up on. No model call needed.
             return {"route": "small_talk", "queries": []}
         try:
-            decision = await router.ainvoke([SystemMessage(prompts.ROUTER), *conversation(history, message)])
+            decision = await router.ainvoke(
+                [SystemMessage(prompts.ROUTER), *conversation(history, message)]
+            )
         except openai.APIError:
             raise  # the model is unreachable: generating would fail too
         except Exception as error:
@@ -133,19 +156,57 @@ def build_graph(
             # back to searching the message, borrowing the previous question
             # when it is a short follow-up.
             log.warning("[route] unusable decision, searching the message itself: %r", error)
-            previous = next((t["content"] for t in reversed(history) if t["role"] == "user"), "")
+            previous = next(
+                (t["content"] for t in reversed(history) if t["role"] == "user"), ""
+            )
             short = len(message.strip()) < 25 and previous
             decision = RouteDecision(
                 kind="documents" if searchable(message) else "small_talk",
                 standalone=f"{previous} {message}" if short else message,
                 french="",
             )
-        queries = list(dict.fromkeys(q.strip() for q in (decision.standalone or message, decision.french) if q.strip()))
+        queries = list(
+            dict.fromkeys(
+                q.strip()
+                for q in (decision.standalone or message, decision.french)
+                if q.strip()
+            )
+        )
         log.info("[route] %s", decision.kind)
         return {"route": decision.kind, "queries": queries}
 
     async def retrieve(state: TwinState) -> TwinState:
-        ranking = await index.ranked(state["queries"])
+        queries = state["queries"]
+        with retrieval_trace(queries) as observation:
+            try:
+                ranking = await index.ranked(queries)
+            except BaseException as error:
+                if observation is not None:
+                    observation.update(
+                        level="ERROR",
+                        status_message=f"retrieval failed ({type(error).__name__})",
+                    )
+                raise
+            if observation is not None:
+                candidates = []
+                for rank, position in enumerate(ranking[: GRADE_WINDOWS[-1][1]], start=1):
+                    passage = index.chunks[position]
+                    candidates.append(
+                        {
+                            "rank": rank,
+                            "document": passage.get("label") or passage.get("title"),
+                            "page": passage.get("page"),
+                            "language": passage.get("lang"),
+                            "content": passage["text"],
+                        }
+                    )
+                observation.update(
+                    output={"documents": candidates},
+                    metadata={
+                        "candidate_count": len(ranking),
+                        "returned_count": len(candidates),
+                    },
+                )
         return {"ranking": ranking, "attempt": 0, "relevant": []}
 
     async def grade(state: TwinState) -> TwinState:
@@ -157,7 +218,9 @@ def build_graph(
         passages = [index.chunks[position] for position in window]
         request = prompts.grading_request(state["queries"][0], passages)
         try:
-            verdict = await grader.ainvoke([SystemMessage(prompts.GRADER), HumanMessage(request)])
+            verdict = await grader.ainvoke(
+                [SystemMessage(prompts.GRADER), HumanMessage(request)]
+            )
             numbers = dict.fromkeys(n for n in verdict.relevant if 1 <= n <= len(window))
             relevant = [window[n - 1] for n in numbers]
         except openai.APIError:
@@ -198,6 +261,9 @@ def build_graph(
         )
         return {"answer": reply.content}
 
+    def choose_path(state: TwinState) -> str:
+        return "search" if state["route"] == "documents" else "answer"
+
     after_routing = {"search": "retrieve", "answer": "generate" if answer else END}
     graph = StateGraph(TwinState)
     graph.add_node("route", route)
@@ -205,9 +271,7 @@ def build_graph(
     graph.add_node("grade", grade)
     graph.add_node("evidence", evidence)
     graph.add_edge(START, "route")
-    graph.add_conditional_edges(
-        "route", lambda state: "search" if state["route"] == "documents" else "answer", after_routing
-    )
+    graph.add_conditional_edges("route", choose_path, after_routing)
     graph.add_edge("retrieve", "grade")
     graph.add_conditional_edges("grade", after_grading, ["grade", "evidence"])
     if answer:

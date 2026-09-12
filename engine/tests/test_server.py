@@ -101,6 +101,7 @@ def test_health_reports_the_model_and_the_index(origin, mock):
     assert body["provider"] == "openai"
     assert body["model"] == "test-model"
     assert body["engine"] == "langgraph"
+    assert body["tracing"] == {"enabled": False, "provider": None, "environment": None}
     assert body["retrieval"]["ready"] is True
     assert body["retrieval"]["passages"] > 0
     assert body["retrieval"]["embedModel"] == "text-embedding-3-large"
@@ -117,6 +118,7 @@ def test_small_talk_streams_utf8_and_skips_routing_and_retrieval(origin, mock):
     assert schema_names(mock.chat_bodies()[made:]) == ["answer"]
     request = mock.answer_request()
     assert request["model"] == "test-model"
+    assert request["stream_options"] == {"include_usage": True}
     assert request["messages"][-1]["content"] == "Hello ✨"
     system = system_prompt(mock)
     assert EMAIL in system

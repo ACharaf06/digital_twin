@@ -33,6 +33,7 @@ its scripted replies.
 | `ALLOWED_ORIGIN` | `http://localhost:5173` (CORS; comma-separated) |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | unset: tracing off |
 | `LANGFUSE_BASE_URL` / `LANGFUSE_HOST` | Langfuse Cloud |
+| `LANGFUSE_TRACING_ENVIRONMENT` | `development` |
 | `TWIN_ENGINE_URL` (vite dev proxy) | `http://localhost:8000` |
 
 Variables already in the environment win over `engine/.env`. Keep the key out of
@@ -116,13 +117,15 @@ page load:
 
 ```json
 {"status":"ready","provider":"openai","model":"gpt-4o-mini","engine":"langgraph",
+ "tracing":{"enabled":true,"provider":"langfuse","environment":"development"},
  "retrieval":{"ready":true,"passages":793,"embedProvider":"openai","embedModel":"text-embedding-3-large"}}
 ```
 
 `POST /chat` accepts:
 
 ```json
-{"message":"What do you build?","history":[{"role":"user","content":"Hi"}]}
+{"message":"What do you build?","history":[{"role":"user","content":"Hi"}],
+ "sessionId":"16fd2706-8baf-433b-82eb-8c7fada847da"}
 ```
 
 The response is `text/event-stream`, with frames separated by a blank line.
@@ -141,6 +144,8 @@ as optional.
 
 Requests are limited to 40 KB and messages to 2,000 characters. Only `user`
 and `assistant` history turns are kept, the last 6 at 800 characters each.
+`sessionId` is optional; the browser sends one opaque UUID per conversation so
+Langfuse can group its turns, and creates a new one when the visitor resets.
 Malformed requests return 400 or 413. The response is held until the first token
 exists, so a failure anywhere before it returns 503, not a broken stream.
 Disconnecting cancels the graph, including an in-flight model request. There is
@@ -221,10 +226,18 @@ working, but the twin stops thinking. Add billing before any public deploy.
 ## Observability
 
 With `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` set, each chat turn becomes
-one Langfuse trace, `twin-chat`, tagged `digital-twin`, `langgraph` and `rag`.
-It holds a span per graph node plus each model call's prompt, output, token
-counts and latency. That is where to see what the router decided, which
-passages the grader kept, and where the time went.
+one Langfuse trace named `twin-chat`, tagged `digital-twin`, `langgraph` and
+`rag`. Its `answer-portfolio-question` root is an `AGENT` observation with the
+visitor's message, final answer, source labels, status, and conversation
+session. Beneath it, the LangChain callback records LangGraph steps and model
+generations with prompts, outputs, model names, tokens, costs, and latency. The
+hybrid lookup is a `RETRIEVER` observation containing the exact ranked passages
+available to the grader. `LANGFUSE_TRACING_ENVIRONMENT` keeps development,
+staging, and production data separate.
+
+Tracing is best-effort: a Langfuse initialization or export problem is logged
+but never prevents the chat from answering. The SDK queue is drained during
+clean engine shutdown.
 
 Traces contain what visitors type, so enabling Langfuse sends their messages to
 a third party. Say so in the site's privacy notice, or redact inputs by passing

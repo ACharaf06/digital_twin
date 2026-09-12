@@ -39,6 +39,7 @@ export function useTwinChat({ onMood, onAction, onBubble, voice }: Options) {
   >('Checking connection')
   const request = useRef<AbortController | null>(null)
   const serial = useRef(0)
+  const sessionId = useRef(crypto.randomUUID())
   const voiceRef = useRef(voice)
   voiceRef.current = voice
 
@@ -62,6 +63,7 @@ export function useTwinChat({ onMood, onAction, onBubble, voice }: Options) {
 
   const reset = useCallback(() => {
     stop()
+    sessionId.current = crypto.randomUUID()
     setMessages([welcome])
     setInput('')
   }, [stop])
@@ -102,7 +104,12 @@ export function useTwinChat({ onMood, onAction, onBubble, voice }: Options) {
 
         if (connection === 'Live AI') {
           try {
-            for await (const event of streamChat(question, history, controller.signal)) {
+            for await (const event of streamChat(
+              question,
+              history,
+              controller.signal,
+              sessionId.current,
+            )) {
               if ('sources' in event) {
                 setMessages((current) =>
                   current.map((message) =>

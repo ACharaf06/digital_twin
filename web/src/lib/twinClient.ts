@@ -28,11 +28,12 @@ export async function* streamChat(
   message: string,
   history: Turn[] = [],
   signal?: AbortSignal,
+  sessionId?: string,
 ): AsyncGenerator<TwinEvent> {
   const res = await fetch(`${ENGINE_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({ message, history, sessionId }),
     signal,
   })
   if (!res.ok || !res.body) throw new Error(`engine ${res.status}`)
