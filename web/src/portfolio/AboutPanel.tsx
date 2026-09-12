@@ -190,6 +190,12 @@ export default function AboutPanel({ hidden, onAction, onBubble }: Props) {
           </a>
         </div>
       </div>
+
+      <p className="chat-privacy">
+        About the chat: what you type goes to OpenAI to write the answer, and to Langfuse, which
+        keeps a trace of the exchange for 30 days so I can see how the twin is doing. Nothing is
+        stored here, there is no account, and the twin cannot contact anyone on my behalf.
+      </p>
     </section>
   )
 }

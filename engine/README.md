@@ -31,6 +31,9 @@ without producing a local answer.
 | `OPENAI_MAX_RETRIES` | `2` (per model call, with the SDK's backoff) |
 | `TWIN_PORT` | `8000` |
 | `ALLOWED_ORIGIN` | `http://localhost:5173` (CORS; comma-separated) |
+| `CHAT_BURST` / `CHAT_PER_MINUTE` | `4` / `4` (per visitor; see [Limits](#the-ceiling-on-chat)) |
+| `CHAT_DAILY_MAX` | `200` turns across every address; `0` removes it |
+| `TRUSTED_PROXY_HOPS` | `1` (proxies appending to `X-Forwarded-For`) |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | unset: tracing off |
 | `LANGFUSE_BASE_URL` / `LANGFUSE_HOST` | Langfuse Cloud |
 | `LANGFUSE_TRACING_ENVIRONMENT` | `development` |
@@ -223,6 +226,27 @@ grounded answers a day across all visitors. `probe.py --graph` alone needs about
 half a second. The studio marks Live AI unavailable and produces no reply; the
 rest of the portfolio remains usable. Add billing before any public deploy.
 
+## The ceiling on /chat
+
+Every call spends quota, so a public endpoint needs a limit that holds before
+any model request is made. `app/limits.py` gives each visitor a token bucket —
+`CHAT_BURST` messages at once, refilling at `CHAT_PER_MINUTE` — behind a
+`CHAT_DAILY_MAX` backstop for traffic spread across many addresses. A refusal
+is a 429 decided ahead of reading the body, so it costs nothing, and
+the studio treats it like any non-OK response: no canned answer appears.
+
+The visitor is read from the **right** of `X-Forwarded-For`, where proxies
+append; whatever a client sent itself stays at the front and is ignored.
+`TRUSTED_PROXY_HOPS` says how deep to count: `1` behind Cloud Run or a local
+reverse proxy, `2` with a load balancer in front of that. Getting it wrong
+files every visitor under one bucket and locks out the whole site at once, so
+check it against a real request after any change of host.
+
+Both counters live in memory. One process, no store to coordinate with — and a
+host that scales to zero forgets them when it restarts. This stops a visitor
+hammering the endpoint while an instance is warm; **the spend cap on the OpenAI
+key is what holds when it cannot.** Set both.
+
 ## Observability
 
 With `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` set, each chat turn becomes
@@ -274,7 +298,22 @@ or 5/8 recall. Run it after rebuilding the index or changing a prompt.
 
 ## Hosting
 
-The server binds to `127.0.0.1`. For public hosting, put it behind an HTTPS
-same-origin reverse proxy, and add per-visitor rate limits, a spend cap on the
-OpenAI key, monitoring, and a privacy notice covering OpenAI (and Langfuse, if
-enabled).
+`python -m app.main` binds `127.0.0.1`, for development. `Dockerfile` builds the
+image a container host runs, binding `0.0.0.0` on `$PORT` — the working
+directory is part of the contract, since imports are top-level. Boot to a
+served `/health` is **0.9 s** and the process holds **~110 MB**, both measured
+in the container, which is what makes scaling to zero reasonable here: the
+committed index ships inside the image, so a cold start reads it from local
+disk rather than fetching it.
+
+Two shapes work. Same-origin — one box, a reverse proxy serving `web/dist` and
+forwarding `/api` — keeps `VITE_ENGINE_URL` at its default and CORS out of the
+picture. Split origins cost no code either: set `VITE_ENGINE_URL` at build time
+and `ALLOWED_ORIGIN` here, which the CORS middleware is already configured for.
+
+Before going public, in both shapes: a spend cap on the OpenAI key (the limiter
+above is best-effort; this is not), `TRUSTED_PROXY_HOPS` checked against a real
+request, monitoring, and a privacy notice covering OpenAI and, if enabled,
+Langfuse. On a host that throttles CPU between requests, tracing also needs the
+per-turn flush in `main.py` — the SDK's background exporter never runs there, so
+traces are lost without it.

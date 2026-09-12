@@ -11,6 +11,8 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from typing import Any, Iterator
 
+from anyio import to_thread
+
 import config
 
 log = logging.getLogger("twin")
@@ -158,6 +160,23 @@ def retrieval_trace(queries: list[str]) -> Iterator[Any | None]:
         yield observation
     finally:
         _close(stack)
+
+
+async def flush() -> None:
+    """Send queued observations before the response ends.
+
+    A host that bills per request throttles CPU to near nothing between them,
+    which starves the SDK's background exporter: the queue then drains only at
+    shutdown, and not at all if the instance is frozen or killed. Flushing here
+    -- after the last token, so the visitor waits on nothing -- is what keeps a
+    turn's trace from being lost. The call is blocking, hence the thread.
+    """
+    if not config.LANGFUSE_ENABLED:
+        return
+    try:
+        await to_thread.run_sync(_client().flush)
+    except Exception as error:  # a finished answer must not fail over tracing
+        log.warning("[tracing] could not flush Langfuse: %s", type(error).__name__)
 
 
 def shutdown() -> None:

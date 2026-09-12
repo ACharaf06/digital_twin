@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
@@ -36,8 +37,8 @@ def mock():
     server.stop()
 
 
-@pytest.fixture(scope="module")
-def origin(mock, tmp_path_factory):
+@contextmanager
+def engine(mock, tmp_path_factory, **settings):
     port = free_port()
     env = {
         **os.environ,
@@ -50,6 +51,12 @@ def origin(mock, tmp_path_factory):
         "LANGFUSE_PUBLIC_KEY": "",
         "LANGFUSE_SECRET_KEY": "",
         "TWIN_PORT": str(port),
+        # The contract tests below are not about the rate limit, and the real
+        # default would refuse them after a handful of turns from one address.
+        "CHAT_BURST": "1000",
+        "CHAT_PER_MINUTE": "6000",
+        "CHAT_DAILY_MAX": "0",
+        **settings,
     }
     log = tmp_path_factory.mktemp("engine") / "engine.log"
     with open(log, "w") as output:
@@ -67,9 +74,17 @@ def origin(mock, tmp_path_factory):
                 child.kill()
                 raise RuntimeError(f"engine failed to start:\n{log.read_text()}")
             time.sleep(0.1)
-    yield url
-    child.terminate()
-    child.wait(10)
+    try:
+        yield url
+    finally:
+        child.terminate()
+        child.wait(10)
+
+
+@pytest.fixture(scope="module")
+def origin(mock, tmp_path_factory):
+    with engine(mock, tmp_path_factory) as url:
+        yield url
 
 
 def chat(origin, body):
@@ -257,3 +272,36 @@ def test_the_graders_choice_leads_the_evidence(origin, mock):
     excerpts = system.split("# EXCERPTS", 1)[1]
     headings = re.findall(r"^\[\d+\] .*\((?:French|English)\)$", excerpts, re.M)
     assert 1 <= len(headings) <= 3  # the one kept passage and at most its two neighbours
+
+
+def test_a_public_chat_refuses_a_visitor_that_will_not_stop(mock, tmp_path_factory):
+    with engine(mock, tmp_path_factory, CHAT_BURST="2", CHAT_PER_MINUTE="1") as url:
+        before = len(mock.requests)
+        allowed = [chat(url, {"message": "hello"}).status_code for _ in range(2)]
+        refused = chat(url, {"message": "hello"})
+        spent = len(mock.requests)
+        assert allowed == [200, 200]
+        assert refused.status_code == 429
+        assert refused.json() == {"error": "too many requests"}
+        # The refusal happens ahead of the body and the model, so it is free.
+        assert len(mock.requests) == spent
+        assert spent > before
+
+
+def test_the_limit_follows_the_visitor_not_the_proxy(mock, tmp_path_factory):
+    with engine(mock, tmp_path_factory, CHAT_BURST="1", CHAT_PER_MINUTE="1") as url:
+        def ask(forwarded):
+            return httpx.post(
+                f"{url}/chat",
+                json={"message": "hello"},
+                headers={"X-Forwarded-For": forwarded},
+                timeout=30,
+            ).status_code
+
+        assert ask("203.0.113.7") == 200
+        # A second visitor arriving through the same proxy is unaffected.
+        assert ask("198.51.100.4") == 200
+        # The first one, back for more, is not -- and cannot buy a fresh bucket
+        # by prepending an address of its own choosing.
+        assert ask("203.0.113.7") == 429
+        assert ask("9.9.9.9, 203.0.113.7") == 429

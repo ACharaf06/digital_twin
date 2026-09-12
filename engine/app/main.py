@@ -29,6 +29,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import config
 import observability
 from agent import orchestrator
+from app.limits import RateLimit, visitor
 
 log = logging.getLogger("twin")
 if not log.handlers:
@@ -47,6 +48,7 @@ MODEL_CHECK_TTL = 600.0  # /health runs on every page load; the model rarely van
 
 _model_checked = float("-inf")
 _client: openai.AsyncOpenAI | None = None
+_limit = RateLimit(config.CHAT_BURST, config.CHAT_PER_MINUTE, config.CHAT_DAILY_MAX)
 
 
 @asynccontextmanager
@@ -182,6 +184,17 @@ async def health():
 
 @app.post("/chat")
 async def chat(request: Request):
+    # Ahead of the body, so a refusal costs neither a read nor a model call.
+    who = visitor(
+        request.headers.get("x-forwarded-for", ""),
+        request.client.host if request.client else None,
+        config.TRUSTED_PROXY_HOPS,
+    )
+    refused = _limit.check(who)
+    if refused:
+        log.info("[chat] refused: %s", refused)
+        return _error(429, "too many requests")
+
     received = bytearray()
     async for chunk in request.stream():
         received += chunk
@@ -234,6 +247,8 @@ async def chat(request: Request):
             raise
         finally:
             await events.aclose()
+            # Still inside the request, where a serverless host allocates CPU.
+            await observability.flush()
 
     return StreamingResponse(
         stream(),

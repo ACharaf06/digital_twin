@@ -1,5 +1,8 @@
 """Langfuse's real SDK receives a useful, nested turn trace without HTTP."""
+import asyncio
 import json
+
+import pytest
 
 from langfuse import Langfuse
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -54,3 +57,32 @@ def test_tracing_is_a_no_op_without_credentials(monkeypatch):
         trace.complete("hi", [])
     with observability.retrieval_trace(["hello"]) as retrieval:
         assert retrieval is None
+
+
+def test_a_turn_is_flushed_before_the_response_ends(monkeypatch):
+    """A host that throttles CPU between requests never runs the background
+    exporter, so the turn has to push its own trace out while it still can."""
+    flushed = []
+    monkeypatch.setattr(observability.config, "LANGFUSE_ENABLED", True)
+    client = type("C", (), {"flush": staticmethod(lambda: flushed.append(1))})()
+    monkeypatch.setattr(observability, "_client", lambda: client)
+    asyncio.run(observability.flush())
+    assert flushed == [1]
+
+
+def test_flushing_without_credentials_never_reaches_the_sdk(monkeypatch):
+    monkeypatch.setattr(observability.config, "LANGFUSE_ENABLED", False)
+    monkeypatch.setattr(observability, "_client", lambda: pytest.fail("Langfuse was contacted"))
+    asyncio.run(observability.flush())
+
+
+def test_a_failed_flush_never_breaks_an_answer_that_already_worked(monkeypatch):
+    def exploding():
+        raise RuntimeError("langfuse is down")
+
+    client = type("C", (), {"flush": staticmethod(exploding)})()
+    monkeypatch.setattr(observability.config, "LANGFUSE_ENABLED", True)
+    monkeypatch.setattr(observability, "_client", lambda: client)
+    asyncio.run(observability.flush())  # must return quietly
+    with pytest.raises(RuntimeError):  # the stub really does fail
+        client.flush()
