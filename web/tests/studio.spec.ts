@@ -152,17 +152,28 @@ test('responsive layouts have no horizontal overflow or overlapping controls', a
 test('streamed replies drive the character, cancellation and reset work', async ({ page }) => {
   const sessions: string[] = []
   await page.route('**/api/health', (route) => route.fulfill({ json: { status: 'ready' } }))
+  let turn = 0
   await page.route('**/api/chat', async (route) => {
     const body = route.request().postDataJSON() as { sessionId: string }
     sessions.push(body.sessionId)
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    await route.fulfill({
-      contentType: 'text/event-stream',
-      body:
-        'data: {"sources":["my thesis"]}\n\n' +
-        'data: {"delta":"Charaf builds RAG and function-calling systems at Amadeus."}\n\n' +
-        'data: {"done":true}\n\n',
-    })
+    // The second turn is the one the test cancels, so hold it open instead of
+    // racing a timer: how long a machine takes to render the stage should not
+    // decide whether the reply is still in flight when the click lands. If it
+    // is not, the first token has already arrived, the placeholder is no
+    // longer empty, and cancelling legitimately keeps it -- a passing app and
+    // a failing test. The other turns answer promptly, but slowly enough that
+    // the "thinking" mood is still observable.
+    await new Promise((resolve) => setTimeout(resolve, turn++ === 1 ? 30000 : 1200))
+    // A held turn can outlive the page it was answering.
+    await route
+      .fulfill({
+        contentType: 'text/event-stream',
+        body:
+          'data: {"sources":["my thesis"]}\n\n' +
+          'data: {"delta":"Charaf builds RAG and function-calling systems at Amadeus."}\n\n' +
+          'data: {"done":true}\n\n',
+      })
+      .catch(() => undefined)
   })
   await enter(page)
   const input = page.getByRole('textbox', { name: "Ask Charaf's digital twin" })

@@ -115,6 +115,10 @@ authored implementation and is excluded from the production build. See
 large original hand source is recoverable from Git history and is intentionally
 absent from the working tree.
 
+`docs/deployment.md` covers what runs where, how to deploy either half, and how
+to tell apart the three different causes of "AI unavailable". Read it before
+changing a domain, an origin, or the build.
+
 Rebuilding the knowledge index uses its own environment (`tools/.venv` from
 `tools/requirements.txt`), not the engine's: run `tools/knowledge/build-index.py`
 after changing `assets-source/knowledge/`, then commit both `index.json` and
