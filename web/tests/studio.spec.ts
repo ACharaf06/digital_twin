@@ -244,6 +244,18 @@ test('unavailable AI, project navigation and genuine contacts', async ({ page },
   await expect(page.locator('.study-list')).toContainText('KTH Royal Institute of Technology')
   await expect(page.locator('.study-list')).toContainText('top 5%')
   await page.getByRole('button', { name: 'The human', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Human, definitely.' })).toBeVisible()
+  await expect(page.locator('.human-feature')).toContainText('Sweden’s Division 6')
+  await page.getByRole('button', { name: 'DJ', exact: true }).click()
+  await expect(page.locator('.human-feature')).toContainText('played at plenty of parties')
+  await expect(page.locator('.mascot-stage')).toHaveAttribute('data-action', 'dance')
+  await page.getByRole('button', { name: 'Gaming', exact: true }).click()
+  await expect(page.locator('.human-feature')).toContainText('Moroccan FIFA 21 tournament')
+  await page.getByRole('button', { name: 'Marvel', exact: true }).click()
+  await expect(page.locator('.human-feature')).toContainText('Tony Stark')
+  await expect(page.locator('.human-side-quests')).toContainText('solo skydive')
+  await expect(page.locator('.human-side-quests')).toContainText('GTA VI')
+  await expect(page.locator('.human-side-quests')).toContainText('Avengers: Doomsday')
   await expect(page.getByRole('link', { name: profileEmail })).toHaveAttribute(
     'href',
     `mailto:${profileEmail}`,

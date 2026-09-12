@@ -41,7 +41,7 @@ export default function TwinConsole({ view, onView, onMood, onAction, onBubble, 
         onChat={() => onView('chat')}
       />
       <StudiesPanel hidden={view !== 'studies'} />
-      <AboutPanel hidden={view !== 'about'} onBubble={onBubble} />
+      <AboutPanel hidden={view !== 'about'} onAction={onAction} onBubble={onBubble} />
     </div>
   )
 }
