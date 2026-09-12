@@ -1,0 +1,14 @@
+{
+  // The studio is a static bundle: Cloudflare serves web/dist from its edge and
+  // runs no code of ours. The chat engine is a separate Python service on Cloud
+  // Run, which the browser reaches directly -- VITE_ENGINE_URL is compiled into
+  // the bundle at build time, and the engine's ALLOWED_ORIGIN must name this
+  // site in return.
+  "name": "digital-twin",
+  "compatibility_date": "2026-09-12",
+  "assets": {
+    "directory": "./web/dist",
+    // One entry point: any unknown path is the app, not a 404.
+    "not_found_handling": "single-page-application"
+  }
+}
