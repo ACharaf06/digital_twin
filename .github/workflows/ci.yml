@@ -2,24 +2,29 @@
 #
 # The engine suite is hermetic: conftest.py sets TWIN_NO_DOTENV and the tests
 # drive a local mock of the OpenAI API, so a run never reads a real key, spends
-# quota, or traces to Langfuse. It is opt-in on PRs because installing its Python
-# dependencies makes it considerably slower than the Studio checks.
+# quota, or traces to Langfuse.
+#
+# The browser suite is the slow half. It installs Chromium and then drives real
+# WebGL through SwiftShader on a runner with no GPU, which is why
+# playwright.config.ts triples its timeouts under CI. So `studio-e2e` is opt-in
+# on PRs behind the `studio-ci` label, while the cheap Studio checks --
+# formatting and the production build -- stay on every PR. A push to main runs
+# everything regardless.
 name: CI
 
 on:
   pull_request:
-    # `labeled` lets an existing PR start the engine job immediately when the
-    # engine-ci label is added. Subsequent commits keep running it while labeled.
+    # `labeled` lets an existing PR start the browser suite immediately when the
+    # studio-ci label is added. Subsequent commits keep running it while labeled.
     types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
 
 jobs:
   engine:
-    if: >-
-      github.event_name == 'push' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'engine-ci') ||
-      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'engine-ci'))
+    # Label-only events exist to start the optional browser suite; the regular
+    # PR events above already keep this job current, so skip the duplicate run.
+    if: github.event_name == 'push' || github.event.action != 'labeled'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,8 +38,7 @@ jobs:
         working-directory: engine # imports are top-level; pytest.ini sets pythonpath
 
   studio:
-    # Label-only events exist to start the optional engine suite; the regular PR
-    # events above already keep Studio current.
+    # Same reasoning as engine: nothing here depends on a label.
     if: github.event_name == 'push' || github.event.action != 'labeled'
     runs-on: ubuntu-latest
     steps:
@@ -50,8 +54,27 @@ jobs:
         working-directory: web
       - run: npm run build
         working-directory: web
+
+  studio-e2e:
+    # Add the `studio-ci` label to run the browser suite on a PR. The label is
+    # sticky: every later push to that PR runs it too, until the label comes off.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'studio-ci') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'studio-ci'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
       # playwright.config.ts falls back to its own Chromium when the macOS
-      # Chrome path is absent, so the suite runs here unchanged.
+      # Chrome path is absent, so the suite runs here unchanged. It serves the
+      # app itself through Vite, so no build step is needed first.
       - run: npx playwright install --with-deps chromium
         working-directory: web
       - run: npm test
