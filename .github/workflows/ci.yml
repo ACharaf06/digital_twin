@@ -1,17 +1,25 @@
 # What has to be true before anything reaches production.
 #
-# The engine suite is fast and hermetic: conftest.py sets TWIN_NO_DOTENV and the
-# tests drive a local mock of the OpenAI API, so a run never reads a real key,
-# spends quota, or traces to Langfuse.
+# The engine suite is hermetic: conftest.py sets TWIN_NO_DOTENV and the tests
+# drive a local mock of the OpenAI API, so a run never reads a real key, spends
+# quota, or traces to Langfuse. It is opt-in on PRs because installing its Python
+# dependencies makes it considerably slower than the Studio checks.
 name: CI
 
 on:
   pull_request:
+    # `labeled` lets an existing PR start the engine job immediately when the
+    # engine-ci label is added. Subsequent commits keep running it while labeled.
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
 
 jobs:
   engine:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'engine-ci') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'engine-ci'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +33,9 @@ jobs:
         working-directory: engine # imports are top-level; pytest.ini sets pythonpath
 
   studio:
+    # Label-only events exist to start the optional engine suite; the regular PR
+    # events above already keep Studio current.
+    if: github.event_name == 'push' || github.event.action != 'labeled'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
