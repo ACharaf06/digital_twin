@@ -127,3 +127,4 @@ after changing `assets-source/knowledge/`, then commit both `index.json` and
 `tools/knowledge/probe.py` measures the shipped index and is free apart from
 embeddings. `--graph` runs the real configured model over ~30 questions and can
 exhaust a low daily request cap; use it deliberately, not as a routine check.
+yes
